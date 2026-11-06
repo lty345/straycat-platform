@@ -1,0 +1,36 @@
+[project]
+name = "straycat-platform"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "aiomysql>=0.3.2",
+    "cryptography>=50.0.2",
+    "fastapi[standard]>=0.148.0",
+    "loguru>=0.7.3",
+    "pydantic-settings>=2.16.0",
+    "python-jose>=3.5.0",
+    "sqlalchemy[asyncio]>=2.1.5",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[[tool.uv.index]]
+url = "https://pypi.tuna.tsinghua.edu.cn/simple"
+default = true
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1.post1",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+# 把项目根目录加进 sys.path，tests/ 里才能 `from app import app`
+pythonpath = ["."]
+# ★ 所有异步测试共用同一个 event loop：
+#   db/database.py 的 async_engine 是模块级创建的，连接池里的连接绑死在
+#   第一个使用它的 loop 上。每个测试新建 loop 会报 NoneType.send。
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]

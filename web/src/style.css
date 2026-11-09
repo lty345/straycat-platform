@@ -1,0 +1,59 @@
+/* =============================================================================
+   src/style.css —— 全局样式（暗色 + 低饱和紫罗兰，几何符号 ◈ 作点缀）
+   ---------------------------------------------------------------------------
+   规矩：**颜色只在这里定义**，组件里一律用 var(--xxx)。
+   这样以后换配色只改这一个文件，不用满项目找 #hex。
+   ============================================================================= */
+:root {
+  --bg: #14100e;          /* 炭黑，不是纯黑 —— 纯黑看久了刺眼 */
+  --panel: #191520;
+  --line: #2a2434;
+  --fg: #e6e1ee;
+  --muted: #8b8497;
+  --violet: #6b5b93;
+  --violet-l: #9d8cc4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--fg);
+}
+
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", ui-sans-serif, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--violet-l);
+  text-decoration: none;
+}
+
+code,
+pre {
+  font-family: ui-monospace, Consolas, Menlo, monospace;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--violet);
+}

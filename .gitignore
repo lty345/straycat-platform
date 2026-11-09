@@ -24,3 +24,17 @@ test.db
 .DS_Store
 Thumbs.db.idea_backup_*/
 *.bak
+# ---- 前端（web/ 下的 Node 生态）----
+# node_modules 绝不能进 git：几十万文件、几百 MB，进去就洗不掉
+node_modules/
+dist/
+dist-ssr/
+.vite/
+# 前端本地环境变量
+web/.env.local
+web/.env.*.local
+# 包管理器日志 / 锁文件冲突产物
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+package-lock.json.bak

@@ -5,9 +5,10 @@
 #   而模型只有被 import 过一次，才会注册到 metadata 里。
 #   漏了这一步 → 建表时"这张表不存在"，但代码里又能 import 到类，很难查。
 # =============================================================================
+from db.model.Content import Content
 from db.database import Base
 
-__all__ = ["Base"]
+__all__ = ["Base", "Content"]
 
 # 示例（以后照这个加）：
 # from db.model.Content import Content

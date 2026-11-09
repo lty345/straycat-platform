@@ -1,226 +1,75 @@
 <script setup>
 // =============================================================================
-// views/ContentList.vue —— 内容列表（垂直切片的靶子）
+// views/ContentList.vue —— 内容列表【待你实现】
 // =============================================================================
-// 【这个页面现在是什么状态】
-//   前端部分已经写好了：加载中 / 出错 / 空列表 / 有数据 四种状态都处理了，
-//   分页也接好了。它唯一缺的是——**后端那个接口**。
+// 【这个页面要覆盖的四种状态】（少一种，线上就会出白屏或转圈不停）
+//   ① 出错    —— 显示 e.message + 一句引导
+//   ② 加载中  —— loading 时显示提示，按钮禁用
+//   ③ 空列表  —— 接口通了但没数据
+//   ④ 有数据  —— 列表 + 分页条
 //
-//   所以你打开它会看到「接口不存在（404）」。这不是 bug，
-//   这是「前端已经在等后端了」。
-//
-// 【你要补的后端】
-//   GET /api/v1/contents?page=1&page_size=10
-//   返回：{ list: [...], total: N, page: 1, page_size: 10 }
-//   （和 doctors/hospitals 的分页结构一模一样，照着抄）
+// 【参考实现】：git 里有我这版（commit 434a638）
+//   git show 434a638:web/src/views/ContentList.vue
+//   先自己写，卡住再看；看完再重写一遍，别直接抄回来。
 // =============================================================================
-import { computed, onMounted, ref } from 'vue'
-import { fetchContents } from '../api/content'
+
+// TODO(你) 1：从 'vue' 里 import 需要的 API（ref / computed / onMounted）
+// TODO(你) 2：import { fetchContents } from '../api/content'
+
+// TODO(你) 3：定义状态
+//   list  : 内容数组，初始 []
+//   total : 总数，初始 0
+//   page  : 当前页，初始 1
+//   loading : 是否加载中，初始 false
+//   error : 错误消息字符串，初始 ''
+
+// TODO(你) 4：totalPages 用 computed 算出来
+//   公式提示：总数 / 每页条数，向上取整；total 为 0 时至少是 1 页
+//   （Math.ceil 是向上取整，别用 Math.round）
+
+// TODO(你) 5：写 load()
+//   进入时 loading = true、error = ''
+//   调 fetchContents({ page: page.value, pageSize: 10 })
+//   成功：把返回的 data.list / data.total 填进状态
+//   失败：error.value = e.message，并把 list 清空
+//   不论成败，最后都要 loading = false（想想要放哪 —— finally）
+
+// TODO(你) 6：写 prev() / next()
+//   边界：第 1 页不能上一页；最后一页不能下一页；翻页后要重新 load()
+
+// TODO(你) 7：onMounted 时调用一次 load()
 
 const PAGE_SIZE = 10
-
-const list = ref([])
-const total = ref(0)
-const page = ref(1)
-const loading = ref(false)
-const error = ref('')
-
-const totalPages = computed(() =>
-  total.value === 0 ? 1 : Math.ceil(total.value / PAGE_SIZE)
-)
-
-async function load() {
-  loading.value = true
-  error.value = ''
-  try {
-    const data = await fetchContents({ page: page.value, pageSize: PAGE_SIZE })
-    // 后端返回的是 Page 结构，字段名照抄后端（list / total / page / page_size）
-    list.value = data.list ?? []
-    total.value = data.total ?? 0
-  } catch (e) {
-    error.value = e.message
-    list.value = []
-    total.value = 0
-  } finally {
-    loading.value = false
-  }
-}
-
-function prev() {
-  if (page.value > 1) {
-    page.value -= 1
-    load()
-  }
-}
-function next() {
-  if (page.value < totalPages.value) {
-    page.value += 1
-    load()
-  }
-}
-
-onMounted(load)
 </script>
 
 <template>
   <section>
-    <div class="head">
-      <h1 class="h1">内容</h1>
-      <button class="btn" :disabled="loading" @click="load">
-        {{ loading ? '加载中…' : '刷新' }}
-      </button>
-    </div>
+    <!-- TODO(你)：标题「内容」+ 一个刷新按钮（loading 时禁用、文字变「加载中…」） -->
 
-    <!-- 状态一：出错 -->
-    <div v-if="error" class="state bad">
-      <div class="dia">◈</div>
-      <p class="state-title">{{ error }}</p>
-      <p class="state-tip">
-        如果提示「接口不存在」，说明后端还没写
-        <code>GET /api/v1/contents</code> —— 这正是你下一步要做的。
-      </p>
-    </div>
+    <!-- TODO(你)：v-if 出错 → 显示 error + 引导文案
+         （后端接口没实现时会是 404，文案要告诉用户「这是正常的，接口还没写」） -->
 
-    <!-- 状态二：加载中 -->
-    <div v-else-if="loading" class="state">
-      <p class="state-title">加载中…</p>
-    </div>
+    <!-- TODO(你)：v-else-if 加载中 -->
 
-    <!-- 状态三：没数据 -->
-    <div v-else-if="list.length === 0" class="state">
-      <div class="dia">◈</div>
-      <p class="state-title">还没有内容</p>
-      <p class="state-tip">接口通了，但表里没数据 —— 该造几条种子数据了。</p>
-    </div>
+    <!-- TODO(你)：v-else-if 空列表 -->
 
-    <!-- 状态四：有数据 -->
-    <template v-else>
-      <ul class="list">
-        <li v-for="item in list" :key="item.id" class="item">
-          <span class="tag">{{ item.mood || '内容' }}</span>
-          <h3 class="title">{{ item.title }}</h3>
-          <p class="summary">{{ item.summary }}</p>
-          <p class="meta">{{ item.pub_time }}</p>
-        </li>
-      </ul>
+    <!-- TODO(你)：v-else → 列表（标题 / 摘要 / 时间 / mood 标签）+ 分页条
+         列表项字段和后端 content 表对齐：title / summary / pub_time / mood
+         v-for 记得加 :key -->
 
-      <div class="pager">
-        <button class="btn" :disabled="page <= 1" @click="prev">上一页</button>
-        <span class="pageno">{{ page }} / {{ totalPages }}　共 {{ total }} 条</span>
-        <button class="btn" :disabled="page >= totalPages" @click="next">下一页</button>
-      </div>
-    </template>
+    <!-- TODO(你)：分页条 -->
+    <!-- 上一页 | 第 x / y 页　共 n 条 | 下一页 -->
   </section>
 </template>
 
 <style scoped>
-.head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 22px;
-}
-.h1 {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  margin: 0;
-}
-.btn {
-  background: transparent;
-  border: 1px solid var(--line);
-  color: var(--muted);
-  font-size: 13px;
-  padding: 6px 16px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: 0.15s;
-}
-.btn:hover:not(:disabled) {
-  border-color: var(--violet);
-  color: var(--violet-l);
-}
-.btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-.state {
-  border: 1px dashed var(--line);
-  border-radius: 4px;
-  padding: 36px 24px;
-  text-align: center;
-}
-.state.bad {
-  border-style: solid;
-  border-color: #5a2b3a;
-}
-.dia {
-  color: var(--violet);
-  font-size: 16px;
-  margin-bottom: 10px;
-}
-.state-title {
-  font-size: 14px;
-  color: var(--fg);
-  margin: 0 0 8px;
-}
-.state-tip {
-  font-size: 12px;
-  color: var(--muted);
-  margin: 0;
-  line-height: 1.8;
-}
-.state-tip code {
-  background: #1d1926;
-  color: var(--violet-l);
-  padding: 1px 6px;
-  border-radius: 2px;
-}
-.list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.item {
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
-  background: var(--panel);
-}
-.tag {
-  font-size: 11px;
-  color: var(--violet-l);
-  border: 1px solid var(--line);
-  padding: 1px 8px;
-  border-radius: 2px;
-}
-.title {
-  font-size: 15px;
-  font-weight: 600;
-  margin: 10px 0 6px;
-  letter-spacing: 0.5px;
-}
-.summary {
-  font-size: 13px;
-  color: var(--muted);
-  margin: 0 0 8px;
-  line-height: 1.7;
-}
-.meta {
-  font-size: 11px;
-  color: #5d5668;
-  margin: 0;
-}
-.pager {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 22px;
-}
-.pageno {
-  font-size: 12px;
-  color: var(--muted);
-}
+/* 颜色变量已经在 src/style.css 里定义好了，直接用：
+     var(--bg)       页面底色
+     var(--panel)    卡片底色
+     var(--line)     边框
+     var(--fg)       主文字
+     var(--muted)    次要文字
+     var(--violet)   紫罗兰（点缀、◈）
+     var(--violet-l) 亮紫罗兰（链接、高亮）
+   规矩：不要在这里写死 #hex，一律用变量。 */
 </style>

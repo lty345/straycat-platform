@@ -1,15 +1,22 @@
 // =============================================================================
-// src/api/content.js —— 内容模块的接口封装
+// src/api/content.js —— 内容模块的接口封装【待你实现】
 // =============================================================================
-// 【规矩】
-//   页面组件里不要出现 axios / URL 字符串，全部走这里。
-//   好处：接口路径变了只改这一个文件；也方便以后换成 mock。
+// 【先把 client 搞清楚再动手】
+//   ../api/client.js 里已经配好了 axios 实例和响应拦截器：
+//     - 拦截器会把后端统一响应 { code, success, message, result } 剥壳
+//     - 所以你在页面里 await 拿到的是**直接的 result**，不是整个外壳
+//     - 出错时拦截器已经 reject 了一个带人话 message 的 Error
+//   也就是说：这里不需要 try/catch，也不需要 body.result。
 //
-// ★ 下面这个 fetchContents 对应的后端接口【还没写】。
-//   它是你下一步要做的垂直切片：
-//     后端：apis/content/api/content.py  →  GET /api/v1/contents?page=&page_size=
-//     前端：这个文件 → ContentList.vue
-//   在它没实现之前，页面会显示"接口不存在（404）"，这是正常的。
+// 【你要写的】
+//   用 client.get('/api/v1/contents', { params: { page, page_size } })
+//   把请求发出去，并把 Promise 返回给调用方。
+//
+// 【后端接口（还没实现，这是你要做的另一半）】
+//   GET /api/v1/contents?page=1&page_size=10
+//   → { list: [...], total: 20, page: 1, page_size: 10 }
+//   注意：查询参数名是 page_size（下划线），前端这边习惯写 pageSize（驼峰），
+//        两边的命名差异就在这里做一次转换，不要让它漏到页面里去。
 // =============================================================================
 import client from './client'
 
@@ -21,7 +28,6 @@ import client from './client'
  * @returns {Promise<{list:Array, total:number, page:number, page_size:number}>}
  */
 export function fetchContents({ page = 1, pageSize = 10 } = {}) {
-  return client.get('/api/v1/contents', {
-    params: { page, page_size: pageSize },
-  })
+  // TODO(你)：一行代码，去掉下面这行 throw，换成真正的请求
+  throw new Error('fetchContents 还没实现')
 }

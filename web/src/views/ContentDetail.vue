@@ -5,7 +5,7 @@ import { fetchContentDetail } from '../api/content'
 
 
 const item = ref(null)        // 详情对象；null = 还没有
-const loading = ref(false)
+const loading = ref(true)
 const error = ref('')
 
 const route = useRoute()      // 地址牌：读 params

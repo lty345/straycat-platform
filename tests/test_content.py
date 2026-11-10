@@ -81,41 +81,46 @@ async def seeded():
 
 async def test_list_pagination_boundary(client, seeded):
     """分页边界：page_size 生效；翻到超出范围的页返回空列表，但 total 不变。"""
-    # TODO(你)：
-    #   1. GET /api/v1/contents?page=1&page_size=2
-    #   2. 断言 status_code == 200
-    #   3. 断言 result["list"] 的长度是 2（不是 3、也不是全部）
-    #   4. 记下 result["total"]
-    #   5. 再 GET /api/v1/contents?page=9999&page_size=2
-    #   6. 断言这次的 list 是空列表，且 total 和第 4 步一样
-    res = await client.get(f"/api/v1/contents?page=1&page_size=2")
+    res = await client.get("/api/v1/contents?page=1&page_size=2")
     assert res.status_code == 200, "状态码应该 200,实际%d" % res.status_code
-    assert len(res.json()["result"]["list"]) == 2, "列表长度应该 2,实际%d" % len(res.json()["result"]["list"])
-    total = res.json()["result"]["total"]
-    ras = await client.get(f"/api/v1/contents?page=9999&page_size=2")
-    assert len(ras.json()["result"]["list"]) == 0, "列表应该为空,实际%d" % len(ras.json()["result"]["list"])
-    assert ras.json()["result"]["total"] == total, "total 应该不变,实际%d" % ras.json()["result"]["total"]
+    first_page = res.json()["result"]
+    assert len(first_page["list"]) == 2, "列表长度应该 2,实际%d" % len(first_page["list"])
+    total = first_page["total"]
+
+    res2 = await client.get("/api/v1/contents?page=9999&page_size=2")
+    assert res2.status_code == 200, "越界页不该报错,实际%d" % res2.status_code
+    second_page = res2.json()["result"]
+    assert len(second_page["list"]) == 0, "越界页列表应该为空,实际%d" % len(second_page["list"])
+    assert second_page["total"] == total, "越界页 total 应该不变,实际%d,期望%d" % (second_page["total"], total)
+
 
 async def test_list_item_has_no_body(client, seeded):
-    """列表项不许带正文（第 4 步那条 guard 的回归测试）。"""
-    # TODO(你)：GET 列表，取 result["list"][0]，断言 "body" not in item
-    res = await client.get(f"/api/v1/contents")
-    item = res.json()["result"]["list"][0]
-    assert "body" not in item, "列表项不应该带正文,实际%s" % str(list(item.keys()))
+    """列表项不许带正文（ContentListOut / ContentDetailOut 拆分的回归防线）。"""
+    res = await client.get("/api/v1/contents")
+    items = res.json()["result"]["list"]
+    assert items, "夹具没造出数据，后面的断言无从谈起"
+    item = items[0]
+    assert "body" not in item, "列表项不应该带正文,实际有这些键:%s" % str(list(item.keys()))
 
 
 async def test_list_order_desc(client, seeded):
     """列表按发布时间倒序：取回来的 pub_time 序列必须严格递减。"""
-    # TODO(你)：注意后端返回的 pub_time 是字符串 "2026-11-09 21:16:58"
-    #   字符串比较在这里恰好也能用（同格式），但更严谨的做法是转成 datetime 再比
-    res = await client.get(f"/api/v1/contents")
+    res = await client.get("/api/v1/contents")
     times = [item["pub_time"] for item in res.json()["result"]["list"]]
-    assert times == sorted(times, reverse=True), "列表应该按 pub_time 倒序,应该%s,实际%s" % (sorted(times, reverse=True), times)
+
+    # ★ pub_time 允许为 NULL。null 混进来时 sorted() 会抛 TypeError，
+    #   那时的报错完全不指向真实原因，所以先把"有没有 null"单独断言出来。
+    nulls = [i for i, t in enumerate(times) if t is None]
+    assert not nulls, "列表里有 pub_time 为 NULL 的记录，下标:%s（表允许可空，但排序断言需要它们有值）" % nulls
+
+    assert times == sorted(times, reverse=True), "列表应该按 pub_time 倒序,应该%s,实际%s" % (
+        sorted(times, reverse=True),
+        times,
+    )
 
 
 async def test_detail_ok(client, seeded):
     """详情能查到：200、success 为真、正文不为空。"""
-    # TODO(你)：用 seeded[0] 这个 id 去 GET /api/v1/contents/{id}
     res = await client.get(f"/api/v1/contents/{seeded[0]}")
     assert res.status_code == 200, "状态码应该 200,实际%d" % res.status_code
     assert res.json()["success"] is True, "success 应该为真,实际%s" % res.json()["success"]
@@ -124,8 +129,7 @@ async def test_detail_ok(client, seeded):
 
 async def test_detail_not_found(client, seeded):
     """查不到时的约定：HTTP 200 + success=false + 业务码 30001（★ 不是 HTTP 404）。"""
-    # TODO(你)：用一个大到不可能存在的 id（比如 99999999）
-    res = await client.get(f"/api/v1/contents/99999999")
+    res = await client.get("/api/v1/contents/99999999")
     assert res.status_code == 200, "状态码应该 200,实际%d" % res.status_code
     assert res.json()["success"] is False, "success 应该为假,实际%s" % res.json()["success"]
     assert res.json()["api_code"] == 30001, "业务码应该 30001,实际%d" % res.json()["api_code"]
@@ -133,6 +137,5 @@ async def test_detail_not_found(client, seeded):
 
 async def test_invalid_page(client, seeded):
     """参数校验：page=0 应该被挡在 400，不能打到数据库。"""
-    # TODO(你)：GET /api/v1/contents?page=0，断言 status_code == 400
-    res = await client.get(f"/api/v1/contents?page=0")
+    res = await client.get("/api/v1/contents?page=0")
     assert res.status_code == 400, "状态码应该 400,实际%d" % res.status_code

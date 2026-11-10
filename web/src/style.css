@@ -12,6 +12,12 @@
   --muted: #8b8497;
   --violet: #6b5b93;
   --violet-l: #9d8cc4;
+
+  /* 情绪基调：低饱和，和整体暗色调一致，不抢标题视线 */
+  --mood-cure: #7fae8f;   /* 治愈 */
+  --mood-sci: #8fa8c4;    /* 科普 */
+  --mood-hurt: #c98a96;   /* 揪心 */
+  --mood-fun: #c4b48f;    /* 欢乐 */
 }
 
 * {

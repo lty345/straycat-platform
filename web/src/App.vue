@@ -8,7 +8,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <header class="topbar">
       <div class="brand">
         <span class="dia">◈</span>
-        <span class="name">流浪猫</span>
+        <span class="name">初尧</span>
         <span class="sub">stray cat</span>
       </div>
       <nav class="nav">

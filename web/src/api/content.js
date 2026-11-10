@@ -31,3 +31,6 @@ export function fetchContents({ page = 1, pageSize = 10 } = {}) {
   // TODO(你)：一行代码，去掉下面这行 throw，换成真正的请求
   return client.get('/api/v1/contents', { params: { page, page_size: pageSize } })
 }
+export function fetchContentDetail(id) {
+  return client.get(`/api/v1/contents/${id}`)   // ← 用模板字符串把 id 拼进路径
+}

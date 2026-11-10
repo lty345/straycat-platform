@@ -13,8 +13,8 @@
 #   所以这里用 scope="session"：整个测试过程只跑在一个 loop 里。
 #
 # 【前置条件】
-#   MySQL 必须开着（db/database.py 的 lifespan 会 SELECT 1），
-#   .env 必须存在（否则 utils/auth.py 会拒绝启动）。
+#   MySQL 必须开着（app.py 的 lifespan 会 SELECT 1），
+#   .env 必须存在（config/config.py 从它读数据库连接信息）。
 # =============================================================================
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient

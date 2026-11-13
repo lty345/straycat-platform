@@ -123,6 +123,7 @@ onMounted(() => {
     <template v-else>
       <ul class="list">
         <li v-for="item in list" :key="item.id" class="card" @click="openDetail(item)">
+          <img :src="item.cover_url" :alt="item.title" loading="lazy" class="cover" />
           <div class="card-top">
             <span class="title">{{ item.title }}</span>
             <span v-if="item.mood" class="mood" :data-mood="item.mood">{{ item.mood }}</span>
@@ -326,6 +327,13 @@ onMounted(() => {
 .card:hover {
   transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
 }
+.cover {
+  width: 100%;
+  aspect-ratio: 16 / 9;   /* 强制 16:9，高度自动算 */
+  object-fit: cover;      /* 裁切填充，不拉伸 */
+  border-radius: 3px;
+}
+
 
 /* ---- 窄屏（手机演示）：一档就够了 ---- */
 @media (max-width: 640px) {

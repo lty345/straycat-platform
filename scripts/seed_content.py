@@ -155,10 +155,10 @@ async def seed() -> None:
                 body=STORIES.get(title, body),
                 tags=tags,
                 mood=mood,
-                cover_url=f'/covers/c{cover}.svg',
+                cover_url=f'/covers/p{idx + 1:02d}.jpg',
                 pub_time=now - timedelta(days=days_ago),
             )
-            for title, summary, body, mood, tags, days_ago, cover in SEED
+            for idx, (title, summary, body, mood, tags, days_ago, cover) in enumerate(SEED)
         ]
 
         db.add_all(rows)

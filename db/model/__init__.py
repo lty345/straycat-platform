@@ -6,9 +6,10 @@
 #   漏了这一步 → 建表时"这张表不存在"，但代码里又能 import 到类，很难查。
 # =============================================================================
 from db.model.Content import Content
+from db.model.UserEvent import UserEvent
 from db.database import Base
 
-__all__ = ["Base", "Content"]
+__all__ = ["Base", "Content", "UserEvent"]
 
 # 示例（以后照这个加）：
 # from db.model.Content import Content

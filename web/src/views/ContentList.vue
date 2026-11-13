@@ -22,7 +22,7 @@ const page = ref(1)
 const loading = ref(false)
 const PAGE_SIZE = 10
 const error = ref('')
-
+const mood = ref('')
 
 const totalPages = computed(() => {
     const n = Math.ceil(total.value / PAGE_SIZE)
@@ -33,7 +33,7 @@ async function load() {
     loading.value = true
     error.value = ''
     try{
-        const data = await fetchContents({ page: page.value, pageSize: PAGE_SIZE })
+        const data = await fetchContents({ page: page.value, pageSize: PAGE_SIZE, mood:mood.value })
         list.value = data.list ?? []
         total.value = data.total ?? 0
     } catch (e) {
@@ -43,6 +43,12 @@ async function load() {
     } finally {
         loading.value = false
     }
+}
+
+function setMood(m) {
+  mood.value = m
+  page.value = 1              // ★★★ 必须重置到第 1 页
+  load()
 }
 
 function prev() {
@@ -80,6 +86,18 @@ onMounted(() => {
       <h1 class="h1">内容</h1>
       <button class="btn" type="button" :disabled="loading" @click="load">
         {{ loading ? '加载中…' : '刷新' }}
+      </button>
+    </div>
+
+    <div class="moods">
+      <button
+      v-for="m in ['', '治愈', '科普', '揪心', '欢乐']"
+      :key="m"
+      class="mood-btn"
+      :class="{ active: mood === m }"
+      :disabled="loading"
+      @click="setMood(m)">
+      {{ m || '全部' }}
       </button>
     </div>
 
@@ -331,4 +349,33 @@ onMounted(() => {
     text-align: center;
   }
 }
+  .moods {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+.mood-btn {
+  background: transparent;
+  border: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
+  padding: 5px 14px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: 0.15s;
+}
+.mood-btn:hover:not(:disabled) {
+  border-color: var(--violet);
+  color: var(--violet-l);
+}
+.mood-btn.active {
+  border-color: var(--violet);
+  color: var(--violet-l);
+  background: #1d1926;
+}
+.mood-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 </style>

@@ -27,9 +27,9 @@ import client from './client'
  * @param {number} p.pageSize 每页几条（后端上限 100）
  * @returns {Promise<{list:Array, total:number, page:number, page_size:number}>}
  */
-export function fetchContents({ page = 1, pageSize = 10 } = {}) {
+export function fetchContents({ page = 1, pageSize = 10,mood="" } = {}) {
   // TODO(你)：一行代码，去掉下面这行 throw，换成真正的请求
-  return client.get('/api/v1/contents', { params: { page, page_size: pageSize } })
+  return client.get('/api/v1/contents', { params: { page, page_size: pageSize,mood } })
 }
 export function fetchContentDetail(id) {
   return client.get(`/api/v1/contents/${id}`)   // ← 用模板字符串把 id 拼进路径

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="450" viewBox="0 0 800 450">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#18171d"/>
+      <stop offset="100%" stop-color="#2c2836"/>
+    </linearGradient>
+    <radialGradient id="r" cx="0.72" cy="0.28" r="0.62">
+      <stop offset="0%" stop-color="#c9b8e8" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#c9b8e8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="450" fill="url(#g)"/>
+  <rect width="800" height="450" fill="url(#r)"/>
+  <circle cx="612" cy="126" r="88" fill="none" stroke="#c9b8e8" stroke-opacity="0.14" stroke-width="1"/>
+  <circle cx="612" cy="126" r="132" fill="none" stroke="#c9b8e8" stroke-opacity="0.08" stroke-width="1"/>
+  <path d="M120 330 Q220 240 320 330 T520 330" fill="none" stroke="#e6e1ee" stroke-opacity="0.10" stroke-width="2"/>
+  <rect x="48" y="48" width="10" height="10" fill="#9d8cc4" fill-opacity="0.55" transform="rotate(45 53 53)"/>
+  <text x="48" y="412" font-family="monospace" font-size="15" fill="#e6e1ee" fill-opacity="0.22" letter-spacing="3">STRAY CAT</text>
+  <text x="700" y="412" font-family="monospace" font-size="15" fill="#e6e1ee" fill-opacity="0.22">11</text>
+</svg>

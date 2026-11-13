@@ -14,6 +14,12 @@ from sqlalchemy import delete, select
 from db.database import AsyncSessionLocal, async_engine
 from db.model import Content
 
+# 长文库：有同名长文的用它，没有的用 SEED 里的短正文
+import os as _os
+import sys as _sys
+_sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+from scripts.stories import STORIES
+
 # (标题, 摘要, 正文, mood, tags, 几天前, 封面序号 1~12)
 SEED = [
     ('橘猫的一天：从窗台到纸箱',
@@ -146,7 +152,7 @@ async def seed() -> None:
             Content(
                 title=title,
                 summary=summary,
-                body=body,
+                body=STORIES.get(title, body),
                 tags=tags,
                 mood=mood,
                 cover_url=f'/covers/c{cover}.svg',

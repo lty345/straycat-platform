@@ -47,6 +47,7 @@ onMounted(load)
 
     <!-- ③ 有数据 -->
     <article v-else class="article">
+      <img v-if="item.cover_url" :src="item.cover_url" :alt="item.title" class="hero" />
       <h1 class="title">{{ item.title }}</h1>
       <div class="meta">
         <span class="dia">◈</span>
@@ -65,6 +66,13 @@ onMounted(load)
 </template>
 
 <style scoped>
+.hero {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 4px;
+  margin-bottom: 24px;
+}
 /* 颜色只用变量：var(--panel) var(--line) var(--fg) var(--muted) var(--violet) var(--violet-l) */
 .page-head {
   margin-bottom: 18px;

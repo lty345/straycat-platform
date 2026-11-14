@@ -38,3 +38,8 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 package-lock.json.bak
+
+# 插件运行时状态（memsearch 等的本地存储）
+.memsearch/
+_tmp_*
+_probe_*

@@ -60,7 +60,9 @@ ApiExceptionHandler(app)
 
 # ⑤ 业务路由：以后每加一个模块就打开一行
 from apis.content.api.content import router_content
+from apis.event.api.event import router_event
 app.include_router(router_content)
+app.include_router(router_event)
 
 
 @app.get("/health", summary="健康检查")

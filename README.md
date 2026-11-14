@@ -108,7 +108,7 @@ uv run pytest -q
 
 ## 待办
 
-- [ ] `cat` / `user_event` / `app_user` 三张表
+- [ ] `cat` / `user_event` / `AppUser.py` 三张表
 - [ ] 埋点接口（浏览 / 点赞）
 - [ ] 规则版推荐 `GET /feed`：标签匹配 + 情绪偏好 + 同城 + 热度，再乘时间衰减 `0.5^(天数/7)`
 - [ ] 领养申请：`UPDATE ... WHERE id=? AND status='待领养'` + 判断 rowcount（并发 10 个只成功 1 个）

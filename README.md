@@ -33,8 +33,9 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"   # 生成 SECRET_K
 #    mysql -uroot -p -e "CREATE DATABASE straycat CHARACTER SET utf8mb4;"
 uv run python main.py
 
-# 4. 造 20 条种子数据（可重复运行，幂等）
-uv run python scripts/seed_content.py
+# 4. 造种子数据（都可重复运行，幂等）
+uv run python scripts/seed_content.py          # 24 条内容（含长文与封面）
+uv run python scripts/seed_users_events.py     # 3 个用户 + 50 条埋点（含冷启动样本）
 
 # 5. 起后端（dev 带热重载）
 uv run fastapi dev app.py        # http://127.0.0.1:8000/docs
@@ -50,6 +51,9 @@ cd web && npm install && npm run dev   # http://localhost:5173
 | GET | `/health` | 健康检查 |
 | GET | `/api/v1/contents` | 内容列表，分页 + 筛选 |
 | GET | `/api/v1/contents/{id}` | 内容详情（含正文） |
+| POST | `/api/v1/events` | 写一条埋点（view / like） |
+| GET | `/api/v1/users/{id}/events` | 按用户查埋点，可分页/按类型过滤 |
+| GET | `/api/v1/feed` | **个性化推荐流**（`user_id` + 分页） |
 
 **列表参数**：`page`（≥1）、`page_size`（1~100）、`mood`（治愈/科普/揪心/欢乐）、`keyword`（匹配标题/摘要/标签）
 **列表返回**：`{ list, total, page, page_size }`，列表项**不含 body**
@@ -97,6 +101,73 @@ web/                    Vue 3 前端（列表页 + 详情页）
 4. **查不到是业务异常，不是空数据**：repository 返回 `None`（只回答"库里有没有"），"内容不存在 → 30001"由 api 层抛 `BusinessError` 决定。
 5. **traceid 日志链路**：中间件生成 traceid → 存进 ContextVar → 日志函数自动带上 → 响应头回传 `X-Trace-Id`，报错时用户能直接把 id 报给你。
 
+## 推荐算法：分数怎么算，为什么这么定权重
+
+这是本项目唯一不是 CRUD 的部分。规则版推荐，**每一项都能说出"为什么这条排前面"**。
+
+```
+score = (3 × 标签匹配数
+       + 2 × 情绪偏好匹配
+       + 1 × 同城
+       + 0.5 × 热度)  ×  0.5 ** (已发布天数 / 7)
+```
+
+### 四项怎么算
+
+| 项 | 权重 | 算法 | 为什么是这个权重 |
+|---|---|---|---|
+| **标签匹配** | **3** | `user.interest_tags ∩ content.tags` 的个数 | 两个**确定**信号相交：用户主动声明的兴趣 × 内容明确标注的标签。最针对个人，权重最高 |
+| **情绪偏好** | **2** | `content.mood == 用户历史偏好 mood` | 从**行为推断**出来的偏好，比"声明"弱一档。偏好 mood 的算法见下 |
+| **同城** | **1** | `content.city == user.city` | 弱相关：同城的人不一定喜欢同一类内容，只是"可能有线下价值" |
+| **热度** | **0.5** | `该内容近 7 天 like 数 / 全站最高 like 数`（归一化到 0~1） | 权重必须最低：**热度对所有用户都一样**，权重一高就退化成"全站热榜"，个性化被稀释 |
+
+**排序依据是"信号对个人的针对性"，不是"信号的重要性"。** 一条标准解释四个数字，比四个独立理由更容易自洽。
+
+### 用户情绪偏好怎么算
+
+```sql
+SELECT content.mood, SUM(IF(event='like', 3, 1)) AS w
+FROM user_event JOIN content ON content.id = user_event.target_id
+WHERE user_id = ? AND target_type = 'content' AND content.mood IS NOT NULL
+GROUP BY content.mood
+ORDER BY w DESC
+LIMIT 1
+```
+
+把用户的行为和内容表连起来，按情绪分组求加权总分：**点赞记 3、浏览记 1**（浏览可能是误触/扫一眼，点赞是主动表态），取总分最高的情绪。
+
+### 时间衰减为什么用乘法
+
+```
+加法：12.5 分的老爆款 − 2 分 = 10.5 分  → 依然霸榜（线性微调）
+乘法：12.5 × 0.5^(30/7) ≈ 0.6 分        → 直接沉底（指数打折）
+```
+
+"过期就该凉"需要一个**能把它压到底**的机制，加法做不到。半衰期取 7 天，意味着每 7 天分数砍半：`0 天 → 1.0`、`7 天 → 0.5`、`14 天 → 0.25`、`21 天 → 0.125`。
+
+> 这个参数直接决定"新鲜度"与"匹配度"谁更重。改成 30 天半衰期，30 天前的完美匹配就能反超今天的热门。所以它应该用点击率数据来调，而不是拍脑袋。
+
+### 冷启动
+
+判定条件：**没有兴趣标签 且 没有任何行为**。
+
+- 只有一个信号缺失时仍可个性化：有标签就用标签算，有行为就能推出情绪偏好
+- 两个都没有 → 四项里三项为 0，算出来的分是假的 → **直接返回近 7 天热门 Top 20**
+
+返回里的 `reason` 字段会写清每一分的来源，例如：
+
+```
+标签×3(日常,橘猫,治愈向) + 情绪×2.0 + 同城×1.0 + 热度×0.50 衰减×1.00
+```
+
+### 已知局限
+
+1. **全量取内容再在 Python 里打分** —— 24 条没问题，上万条要改成"SQL 粗筛（标签/时间）→ Python 精排"
+2. **热度只用 like，没用 view** —— 浏览量大但没人点赞的内容会被低估
+3. **不排除已读** —— 用户会看到刚看过的内容
+4. **权重是人工设定的** —— 没有数据支撑；严谨做法是用点击率做网格搜索，或引入排序学习
+5. **没有评估指标** —— 目前只做了定性验证（两个兴趣不同的用户 top5 完全不同），缺少 NDCG / 点击率这类定量指标
+
 ## 测试
 
 ```bash
@@ -105,12 +176,17 @@ uv run pytest -q
 
 前置条件：MySQL 开着、`.env` 存在。
 `tests/test_content.py` 用自建夹具（插 3 条 → 测 → 删），不依赖种子数据，覆盖：分页边界、列表不带 body、倒序、详情、404 业务码、参数校验。
+`tests/test_event.py` 覆盖：写入回读、`total` 与翻页一致（防 list/count 口径分叉）、非法枚举拒绝。
+
+> 测试是否真的有效，用"故意改坏"来验证：把分页 `offset` 改成固定 0，`test_list_total_matches_across_pages` 应立刻变红。
 
 ## 待办
 
-- [ ] `cat` / `user_event` / `AppUser.py` 三张表
-- [ ] 埋点接口（浏览 / 点赞）
-- [ ] 规则版推荐 `GET /feed`：标签匹配 + 情绪偏好 + 同城 + 热度，再乘时间衰减 `0.5^(天数/7)`
-- [ ] 领养申请：`UPDATE ... WHERE id=? AND status='待领养'` + 判断 rowcount（并发 10 个只成功 1 个）
-- [ ] 前端：mood/关键词筛选 UI、列表页样式收尾
-- [ ] README 补一节"推荐分数怎么算、为什么这么定权重"（等 `/feed` 做完）
+- [x] `content` / `user_event` / `app_user` 三张表
+- [x] 埋点接口（浏览 / 点赞）
+- [x] 规则版推荐 `GET /feed`（含冷启动兜底与可解释 reason）
+- [ ] `cat` 表 + 领养申请：`UPDATE ... WHERE id=? AND status='待领养'` + 判断 rowcount（并发 10 个只成功 1 个）
+- [ ] 前端 `/feed` 推荐页（展示"两个兴趣不同的用户看到不同内容"）
+- [ ] 前端接埋点（打开详情页自动上报 view）
+- [ ] 推荐的自动化测试（top1 差异 / 标签带空格仍匹配 / 冷启动标记）
+

@@ -15,6 +15,7 @@ class Content(Base):
     body = Column(Text)
     tags = Column(String(255))
     mood=Column(String(16),comment="治愈/科普/揪心/欢乐/其他")
+    city=Column(String(50),comment="内容所在城市，推荐的同城加权用")
     cover_url=Column(String(500))
     pub_time=Column(DateTime,server_default=func.now())
     create_time=Column(DateTime,server_default=func.now())

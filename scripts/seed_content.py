@@ -144,6 +144,8 @@ SEED = [
 
 async def seed() -> None:
     now = datetime.now()
+    # 城市按序轮转分配（推荐要用的"同城加权"；真实数据应按内容来源填）
+    CITIES = ["广州", "深圳", "佛山"]
 
     async with AsyncSessionLocal() as db:
         await db.execute(delete(Content))
@@ -155,6 +157,7 @@ async def seed() -> None:
                 body=STORIES.get(title, body),
                 tags=tags,
                 mood=mood,
+                city=CITIES[idx % len(CITIES)],
                 cover_url=f'/covers/p{idx + 1:02d}.jpg',
                 pub_time=now - timedelta(days=days_ago),
             )

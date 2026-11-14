@@ -24,6 +24,11 @@ const routes = [
     name: 'not-found',
     component: () => import('../views/NotFound.vue'),
   },
+  {
+  path: '/feed',
+  name: 'feed',
+  component: () => import('../views/Feed.vue'),
+},
 ]
 
 export default createRouter({

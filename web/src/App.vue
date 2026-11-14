@@ -14,6 +14,7 @@ import { RouterLink, RouterView } from 'vue-router'
       <nav class="nav">
         <RouterLink to="/">概览</RouterLink>
         <RouterLink to="/contents">内容</RouterLink>
+        <RouterLink to="/feed">推荐</RouterLink>
       </nav>
     </header>
 

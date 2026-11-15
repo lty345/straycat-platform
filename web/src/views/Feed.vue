@@ -1,15 +1,13 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchFeed } from '../api/feed'
+import { fetchUsers } from '../api/user'
 
-// 演示用的三个用户（id 来自 scripts/seed_users_events.py，重跑脚本后 id 会变）
-const USERS = [
-  { id: 4, name: '小橘', desc: '橘猫 / 日常' },
-  { id: 5, name: '阿救', desc: '救助 / 科普' },
-  { id: 6, name: '路过的新人', desc: '冷启动' },
-]
+// ★ 用户列表从接口拿，不写死 id：
+//   种子脚本重跑会让 id 变（4/5/6 → 7/8/9），写死就会"用户不存在"。
+const users = ref([])
+const userId = ref(null)
 
-const userId = ref(4)
 const data = ref(null)      // 接口返回的整个 result
 const loading = ref(false)
 const error = ref('')
@@ -36,7 +34,19 @@ function switchUser(id) {
   load()          // 换人立刻重拉
 }
 
-onMounted(load)
+onMounted(async () => {
+  try {
+    users.value = await fetchUsers()
+    if (users.value.length === 0) {
+      error.value = '还没有用户，先跑 scripts/seed_users_events.py'
+      return
+    }
+    userId.value = users.value[0].id       // 默认选第一个
+    await load()
+  } catch (e) {
+    error.value = e.message
+  }
+})
 </script>
 
 <template>
@@ -45,10 +55,10 @@ onMounted(load)
 
     <!-- 用户切换：点一下换一个人，看顺序怎么变 -->
     <div class="users">
-      <button v-for="u in USERS" :key="u.id"
+      <button v-for="u in users" :key="u.id"
               :class="{ on: userId === u.id }"
               @click="switchUser(u.id)">
-        {{ u.name }}<small>{{ u.desc }}</small>
+        {{ u.nickname }}<small>{{ u.interest_tags || '冷启动' }}</small>
       </button>
     </div>
 

@@ -43,13 +43,16 @@ async def list_cats(
 
 @router_cat.post("/cats/{cat_id}/adopt", summary="申请领养一只猫")
 async def adopt_cat(
+    payload: AdoptIn,
     cat_id: int = Path(..., ge=1, description="猫的 id"),
-    payload: AdoptIn = ...,
     db: AsyncSession = Depends(get_db_session),
 ):
     """申请领养。抢到返回成功；被别人抢先返回业务码 20001。"""
     ok = await cat_repo.adopt_cat(db, cat_id, payload.user_id)
     if not ok:
+        # 失败有两种原因，要分开报：猫不存在 vs 被别人抢了
+        if await cat_repo.get_cat_by_id(db, cat_id) is None:
+            raise BusinessError(ExceptionEnum.CAT_NOT_FOUND)
         raise BusinessError(ExceptionEnum.ADOPT_TAKEN)
     return Success(api_code=200, message="申请成功", result={"cat_id": cat_id, "status": "审核中"})
 
@@ -68,6 +71,8 @@ async def approve_cat(
     """审核通过：审核中 → 已领养。只能处理「审核中」的申请。"""
     ok = await cat_repo.approve_cat(db, cat_id)
     if not ok:
+        if await cat_repo.get_cat_by_id(db, cat_id) is None:
+            raise BusinessError(ExceptionEnum.CAT_NOT_FOUND)
         raise BusinessError(ExceptionEnum.ADOPT_NOT_PENDING)
     return Success(api_code=200, message="审核通过", result={"cat_id": cat_id, "status": "已领养"})
 
@@ -80,5 +85,7 @@ async def reject_cat(
     """驳回申请：审核中 → 待领养，并清空申请人，让猫重新开放。"""
     ok = await cat_repo.reject_cat(db, cat_id)
     if not ok:
+        if await cat_repo.get_cat_by_id(db, cat_id) is None:
+            raise BusinessError(ExceptionEnum.CAT_NOT_FOUND)
         raise BusinessError(ExceptionEnum.ADOPT_NOT_PENDING)
     return Success(api_code=200, message="已驳回，猫重新开放申请", result={"cat_id": cat_id, "status": "待领养"})

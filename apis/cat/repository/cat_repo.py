@@ -24,6 +24,13 @@ async def adopt_cat(db, cat_id: int, user_id: int) -> bool:
     return result.rowcount == 1
 
 
+async def get_cat_by_id(db, cat_id: int) -> Cat | None:
+    """按 id 查一只猫（只用于"报错文案"，不用于判断抢占成败）。"""
+    return (
+        await db.execute(select(Cat).where(Cat.id == cat_id))
+    ).scalar_one_or_none()
+
+
 # -----------------------------------------------------------------------------
 # 一·补、审核（状态机闭环：审核中 → 已领养 / 待领养）
 # -----------------------------------------------------------------------------

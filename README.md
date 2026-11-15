@@ -79,6 +79,11 @@ cd web && npm install && npm run dev   # http://localhost:5173
 | POST | `/api/v1/events` | 写一条埋点（view / like） |
 | GET | `/api/v1/users/{id}/events` | 按用户查埋点，可分页/按类型过滤 |
 | GET | `/api/v1/feed` | **个性化推荐流**（`user_id` + 分页） |
+| GET | `/api/v1/users` | 用户列表（演示用：前端据此切换用户，不写死 id） |
+| GET | `/api/v1/cats` | 猫列表（`status` / `city` 可选筛选 + 分页） |
+| POST | `/api/v1/cats/{id}/adopt` | 申请领养（原子抢占，成功 200 / 被抢 20001 / 不存在 20004） |
+| POST | `/api/v1/cats/{id}/approve` | 审核通过：审核中 → 已领养（⚠️ 真实系统需管理员鉴权） |
+| POST | `/api/v1/cats/{id}/reject` | 驳回：审核中 → 待领养，并清空申请人 |
 
 **列表参数**：`page`（≥1）、`page_size`（1~100）、`mood`（治愈/科普/揪心/欢乐）、`keyword`（匹配标题/摘要/标签）
 **列表返回**：`{ list, total, page, page_size }`，列表项**不含 body**
@@ -207,11 +212,24 @@ uv run pytest -q
 
 ## 待办
 
-- [x] `content` / `user_event` / `app_user` 三张表
+- [x] `content` / `user_event` / `app_user` / `cat` 四张表
 - [x] 埋点接口（浏览 / 点赞）
 - [x] 规则版推荐 `GET /feed`（含冷启动兜底与可解释 reason）
-- [ ] `cat` 表 + 领养申请：`UPDATE ... WHERE id=? AND status='待领养'` + 判断 rowcount（并发 10 个只成功 1 个）
-- [ ] 前端 `/feed` 推荐页（展示"两个兴趣不同的用户看到不同内容"）
-- [ ] 前端接埋点（打开详情页自动上报 view）
-- [ ] 推荐的自动化测试（top1 差异 / 标签带空格仍匹配 / 冷启动标记）
+- [x] 领养抢占：`UPDATE ... WHERE id=? AND status='待领养'` + rowcount（并发 10 个只成功 1 个）
+- [x] 审核环节：approve / reject，状态机闭环（审核中 → 已领养 / 待领养）
+- [x] 前端 `/feed` 推荐页、`/cats` 领养页
+- [x] 推荐的自动化测试（top1 差异 / 冷启动标记 / 用户不存在）
+- [x] 领养抢占的并发测试（10 并发只成功 1 个）
+- [ ] 前端接埋点（打开详情页自动上报 view + 停留时长）
+- [ ] 登录与鉴权（**当前 user_id 由请求体传入，可被冒充；approve/reject 无权限校验**）
+
+## 已知局限
+
+| 缺口 | 说明 | 真实实现 |
+|---|---|---|
+| **无登录鉴权** | `user_id` 是请求体/参数传的，能冒充任何人 | JWT / Session 中间件 |
+| **审核无权限校验** | 任何人可调 approve / reject | `cat.publisher_id` + 角色校验 |
+| **推荐全量在 Python 算** | 24 条没问题，上万条要两阶段 | SQL 粗筛 → Python 精排 |
+| **埋点数据是脏的** | 刷新会重复记 view，没有去重 | 前端节流 + 服务端去重窗口 |
+
 

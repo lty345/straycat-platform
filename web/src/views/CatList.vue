@@ -10,9 +10,10 @@
 // =============================================================================
 import { ref, onMounted } from 'vue'
 import { fetchCats, adoptCat, approveCat, rejectCat } from '../api/cat'
+import { fetchUsers } from '../api/user'
 
-// 演示用：还没有登录体系，固定用"小橘"（id=4）
-const CURRENT_USER_ID = 4
+// 当前操作人：从用户列表里取第一个（不写死 id，重跑种子脚本也不会错）
+const currentUserId = ref(null)
 
 const list = ref([])
 const total = ref(0)
@@ -49,7 +50,7 @@ async function onAdopt(cat) {
   adoptingId.value = cat.id
   notice.value = ''
   try {
-    await adoptCat(cat.id, CURRENT_USER_ID)
+    await adoptCat(cat.id, currentUserId.value)
     notice.value = `已申请领养「${cat.name}」，等待审核`
   } catch (e) {
     // 拦截器已经把后端的 message 剥好了：这里就是"这只猫已被他人申请"
@@ -88,7 +89,16 @@ async function review(cat, action) {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  // 先拿"当前操作人"，再拉列表（不写死 id）
+  try {
+    const users = await fetchUsers()
+    currentUserId.value = users.length ? users[0].id : null
+  } catch (e) {
+    notice.value = e.message
+  }
+  await load()
+})
 </script>
 
 <template>

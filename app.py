@@ -63,10 +63,12 @@ from apis.content.api.content import router_content
 from apis.event.api.event import router_event
 from apis.feed.api.feed import router_feed
 from apis.cat.api.cat import router_cat
+from apis.user.api.user import router_user
 app.include_router(router_content)
 app.include_router(router_event)
 app.include_router(router_feed)
 app.include_router(router_cat)
+app.include_router(router_user)
 
 
 @app.get("/health", summary="健康检查")

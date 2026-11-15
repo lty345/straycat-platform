@@ -9,7 +9,7 @@ class Content(Base):
         Index("idx_mood", "mood"),           # 按情绪筛选要用
         {"comment": "内容表"},
     )
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True)
     title = Column(String(255), nullable=False)
     summary = Column(String(500))
     body = Column(Text)

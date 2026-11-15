@@ -8,7 +8,7 @@ class UserEvent(Base):
         Index("idx_user_time", "user_id", "create_time"),
         Index("idx_target", "target_type", "target_id"),
         {"comment": "用户行为埋点"})
-    id = Column(BigInteger, primary_key=True, index=True)
+    id = Column(BigInteger, primary_key=True)
     user_id = Column(Integer, nullable=False)
     target_type = Column(String(16), nullable=False)
     target_id = Column(Integer, nullable=False)

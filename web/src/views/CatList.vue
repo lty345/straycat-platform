@@ -127,38 +127,46 @@ onMounted(async () => {
     <p v-else-if="list.length === 0">这个条件下还没有猫</p>
     <ul v-else class="list">
       <li v-for="cat in list" :key="cat.id" class="card">
-        <div class="top">
-          <span class="name">{{ cat.name }}</span>
-          <span class="badge" :data-status="cat.status">{{ cat.status }}</span>
-        </div>
-        <p class="meta">
-          {{ cat.breed }} · {{ cat.age_month }} 个月 · {{ cat.city }}
-        </p>
-        <p class="health">{{ cat.health }}</p>
-
-        <button
-          v-if="cat.status === '待领养'"
-          class="btn"
-          :disabled="adoptingId === cat.id"
-          @click="onAdopt(cat)"
-        >
-          {{ adoptingId === cat.id ? '申请中…' : '申请领养' }}
-        </button>
-
-        <!-- 审核中：管理员视角的两个出口（演示用，真实系统这里必须鉴权） -->
-        <div v-else-if="cat.status === '审核中'" class="review">
-          <span class="state-text">申请人 #{{ cat.applicant_id }} 等待审核</span>
-          <button class="btn" :disabled="adoptingId === cat.id" @click="review(cat, 'approve')">
-            通过
-          </button>
-          <button class="btn btn-ghost" :disabled="adoptingId === cat.id" @click="review(cat, 'reject')">
-            驳回
-          </button>
+        <!-- 左图右文：图片用 object-fit: cover，任何尺寸都不会变形 -->
+        <div class="cover-wrap">
+          <img v-if="cat.cover_url" class="cover" :src="cat.cover_url" :alt="cat.name" loading="lazy" />
+          <div class="badge" :data-status="cat.status">{{ cat.status }}</div>
         </div>
 
-        <span v-else class="state-text">
-          已有家啦<template v-if="cat.applicant_id">（领养人 #{{ cat.applicant_id }}）</template>
-        </span>
+        <div class="body">
+          <div class="top">
+            <span class="name">{{ cat.name }}</span>
+            <span class="breed">{{ cat.breed }}</span>
+          </div>
+          <p class="meta">{{ cat.age_month }} 个月 · {{ cat.city }}</p>
+          <p class="health">{{ cat.health }}</p>
+
+          <div class="actions">
+            <button
+              v-if="cat.status === '待领养'"
+              class="btn"
+              :disabled="adoptingId === cat.id"
+              @click="onAdopt(cat)"
+            >
+              {{ adoptingId === cat.id ? '申请中…' : '申请领养' }}
+            </button>
+
+            <!-- 审核中：管理员视角的两个出口（演示用，真实系统这里必须鉴权） -->
+            <template v-else-if="cat.status === '审核中'">
+              <span class="state-text">申请人 #{{ cat.applicant_id }} 等待审核</span>
+              <button class="btn" :disabled="adoptingId === cat.id" @click="review(cat, 'approve')">
+                通过
+              </button>
+              <button class="btn btn-ghost" :disabled="adoptingId === cat.id" @click="review(cat, 'reject')">
+                驳回
+              </button>
+            </template>
+
+            <span v-else class="state-text">
+              已有家啦<template v-if="cat.applicant_id">（领养人 #{{ cat.applicant_id }}）</template>
+            </span>
+          </div>
+        </div>
       </li>
     </ul>
   </section>
@@ -218,23 +226,71 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
+  /* 宽屏两列、窄屏一列：比整行拉满好看，也少留白 */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  gap: 14px;
 }
+
+/* 卡片：左边图片，右边信息 */
 .card {
+  display: flex;
+  gap: 16px;
   border: 1px solid var(--line);
   background: var(--panel);
+  border-radius: 6px;
+  padding: 12px;
+  transition: border-color 0.18s, transform 0.18s;
+}
+.card:hover {
+  border-color: var(--violet);
+  transform: translateY(-1px);
+}
+
+.cover-wrap {
+  position: relative;
+  flex-shrink: 0;
+  width: 150px;
+  height: 116px;
   border-radius: 4px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
+  overflow: hidden;
+  background: #0d0b14;
+}
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* 状态徽章压在图片右下角 */
+.cover-wrap .badge {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  background: rgba(10, 8, 16, 0.82);
+  backdrop-filter: blur(2px);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 .top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 .name {
-  font-size: 15px;
+  font-size: 17px;
+  font-weight: 500;
   color: var(--fg);
+}
+.breed {
+  font-size: 12px;
+  color: var(--muted);
 }
 .badge {
   font-size: 11px;
@@ -250,6 +306,14 @@ h1 {
 .badge[data-status='审核中'] {
   color: var(--mood-fun);
   border-color: var(--mood-fun);
+}
+
+.actions {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 .meta {
   color: var(--muted);

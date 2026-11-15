@@ -8,30 +8,33 @@
 
 ## 效果
 
-**别人看到的是同一条流，但两个人看到的顺序完全不同。**
+![首页](docs/screenshots/home.png)
+
+### 内容：24 篇救助故事与养猫科普
+
+![内容列表](docs/screenshots/contents.png)
+
+### 推荐：同一条流，两个人看到的顺序完全不同
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/feed-xiaoju.png" alt="小橘：偏好橘猫与日常"><br><sub>小橘（兴趣：橘猫 / 日常）→ 首条《橘猫的一天》11.322 分，标签命中 3 个</sub></td>
-<td width="50%"><img src="docs/screenshots/feed-ajiu.png" alt="阿救：偏好救助与科普"><br><sub>阿救（兴趣：救助 / 科普）→ 首条《救助记录：暴雨夜的三只小猫》6.153 分</sub></td>
+<td width="50%"><img src="docs/screenshots/feed.png" alt="小橘：偏好橘猫与日常"><br><sub>小橘（兴趣：橘猫 / 日常）→ 首条《橘猫的一天》，标签命中 3 个（橘猫 / 日常 / 治愈向）</sub></td>
+<td width="50%"><img src="docs/screenshots/feed-ajiu.png" alt="阿救：偏好救助与科普"><br><sub>阿救（兴趣：救助 / 科普）→ 首条《救助记录：暴雨夜的三只小猫》，标签命中 2 个（救助 / 奶猫）</sub></td>
 </tr>
 </table>
 
 每条内容下面都带着**分数和理由**（`标签×3(日常,橘猫,治愈向) + 情绪×2.0 + 同城×1.0 + 热度×0.50 衰减×0.91`）——这就是"可解释推荐"：排序不是玄学，每一分都能指着说清。
 
-内容列表页：
-
-![内容列表](docs/screenshots/contents.png)
-
-领养抢占（点「申请领养」即可；成功或失败都会刷新列表——不让界面说谎）：
+### 领养：申请 → 审核 → 已领养
 
 <table>
 <tr>
-<td width="50%"><img src="docs/screenshots/cats.png" alt="待领养的猫"><br><sub>待领养 5 只，每只可申请</sub></td>
-<td width="50%"><img src="docs/screenshots/cats-adopted.png" alt="申请后"><br><sub>小橘被申请后离开「待领养」筛选（共 4 只），再点会返回 20001</sub></td>
+<td width="50%"><img src="docs/screenshots/cats.png" alt="待领养的猫"><br><sub>待领养：每只猫一张卡，可直接申请</sub></td>
+<td width="50%"><img src="docs/screenshots/cats-review.png" alt="审核中"><br><sub>审核中：显示申请人，可「通过」或「驳回」</sub></td>
 </tr>
 </table>
 
+一只猫只能被一个人申请（原子 UPDATE + rowcount），申请后进入审核；通过即成为已领养，驳回则重新开放。前端点完无论成败都**重新拉列表**，不让界面说谎。
 ## 技术栈
 
 | 分类 | 选型 |

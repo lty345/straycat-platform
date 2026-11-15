@@ -123,16 +123,20 @@ onMounted(() => {
     <template v-else>
       <ul class="list">
         <li v-for="item in list" :key="item.id" class="card" @click="openDetail(item)">
-          <img :src="item.cover_url" :alt="item.title" loading="lazy" class="cover" />
-          <div class="card-top">
-            <span class="title">{{ item.title }}</span>
+          <div class="cover-wrap">
+            <img :src="item.cover_url" :alt="item.title" loading="lazy" class="cover" />
             <span v-if="item.mood" class="mood" :data-mood="item.mood">{{ item.mood }}</span>
           </div>
-          <p v-if="item.summary" class="summary">{{ item.summary }}</p>
-          <div class="meta">
-            <span class="dia">◈</span>
-            <span>{{ item.pub_time }}</span>
-            <span v-if="item.tags" class="tags">{{ item.tags }}</span>
+          <div class="card-body">
+            <div class="card-top">
+              <span class="title">{{ item.title }}</span>
+            </div>
+            <p v-if="item.summary" class="summary">{{ item.summary }}</p>
+            <div class="meta">
+              <span class="dia">◈</span>
+              <span>{{ item.pub_time }}</span>
+              <span v-if="item.tags" class="tags">{{ item.tags }}</span>
+            </div>
           </div>
         </li>
       </ul>
@@ -213,23 +217,58 @@ onMounted(() => {
   border-radius: 2px;
 }
 
-/* ---- 列表 ---- */
+/* ---- 列表：三列卡片网格 ---- */
 .list {
   list-style: none;
   margin: 0 0 20px;
   padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
 }
 .card {
   border: 1px solid var(--line);
   background: var(--panel);
-  border-radius: 4px;
-  padding: 16px 18px;
-  margin-bottom: 12px;
+  border-radius: 6px;
+  overflow: hidden;          /* 让封面圆角跟着卡片走 */
   cursor: pointer;
-  transition: border-color 0.15s;
+  transition: border-color 0.18s, transform 0.18s;
+  display: flex;
+  flex-direction: column;
 }
 .card:hover {
   border-color: var(--violet);
+  transform: translateY(-2px);
+}
+/* 封面固定 16:9，图片怎么裁都不变形 */
+.cover-wrap {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #0d0b14;
+}
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.35s;
+}
+.card:hover .cover {
+  transform: scale(1.03);    /* 悬停轻微放大，成本几乎为 0 */
+}
+.cover-wrap .mood {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  background: rgba(10, 8, 16, 0.82);
+  backdrop-filter: blur(2px);
+}
+.card-body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 .card-top {
   display: flex;
@@ -239,7 +278,9 @@ onMounted(() => {
 }
 .title {
   font-size: 15px;
+  font-weight: 500;
   color: var(--fg);
+  line-height: 1.5;
 }
 .mood {
   font-size: 11px;
@@ -247,6 +288,7 @@ onMounted(() => {
   border: 1px solid var(--line);
   border-radius: 2px;
   padding: 1px 7px;
+  white-space: nowrap;
 }
 /* 情绪分色：用 data-mood 属性选择器，颜色全部来自 style.css 的变量 */
 .mood[data-mood='治愈'] {

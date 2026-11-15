@@ -73,17 +73,20 @@ onMounted(async () => {
     <p v-else-if="items.length === 0">还没有可推荐的内容</p>
     <ul v-else class="list">
       <li v-for="it in items" :key="it.id" class="card">
-        <div class="top">
-          <span class="title">{{ it.title }}</span>
-          <span class="score">{{ it.score }}</span>
+        <img v-if="it.cover_url" class="thumb" :src="it.cover_url" alt="" loading="lazy" />
+        <div class="body">
+          <div class="top">
+            <span class="title">{{ it.title }}</span>
+            <span class="score">{{ it.score }}</span>
+          </div>
+          <p class="summary">{{ it.summary }}</p>
+          <div class="meta">
+            <span>{{ it.mood }}</span>
+            <span>{{ it.city }}</span>
+            <span v-if="preferredMood">偏好情绪：{{ preferredMood }}</span>
+          </div>
+          <p class="reason">{{ it.reason }}</p>   <!-- ★ 这一行是这一页的灵魂 -->
         </div>
-        <p class="summary">{{ it.summary }}</p>
-        <div class="meta">
-          <span>{{ it.mood }}</span>
-          <span>{{ it.city }}</span>
-          <span v-if="preferredMood">偏好情绪：{{ preferredMood }}</span>
-        </div>
-        <p class="reason">{{ it.reason }}</p>   <!-- ★ 这一行是这一页的灵魂 -->
       </li>
     </ul>
   </section>
@@ -147,16 +150,32 @@ h1 {
   margin: 0;
   padding: 0;
 }
+/* 左缩略图 + 右内容 */
 .card {
+  display: flex;
+  gap: 16px;
   border: 1px solid var(--line);
   background: var(--panel);
-  border-radius: 4px;
-  padding: 16px 18px;
+  border-radius: 6px;
+  padding: 12px;
   margin-bottom: 12px;
-  transition: border-color 0.15s;
+  transition: border-color 0.18s, transform 0.18s;
 }
 .card:hover {
   border-color: var(--violet);
+  transform: translateY(-1px);
+}
+.thumb {
+  flex-shrink: 0;
+  width: 132px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: #0d0b14;
+}
+.body {
+  flex: 1;
+  min-width: 0;
 }
 .top {
   display: flex;
@@ -166,7 +185,8 @@ h1 {
   margin-bottom: 6px;
 }
 .title {
-  font-size: 15px;
+  font-size: 16px;
+  font-weight: 500;
   color: var(--fg);
 }
 /* 分数用等宽 + 亮紫色，让人一眼看到排序依据 */
@@ -180,7 +200,12 @@ h1 {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.7;
-  margin: 0 0 10px;
+  margin: 0 0 8px;
+  /* 最多两行，超出省略——列表里不需要整段摘要 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .meta {
   display: flex;

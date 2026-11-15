@@ -50,7 +50,9 @@ async def seed() -> None:
                 status=status,
                 # 已领养的猫要有个领养人，否则"已领养"这条记录是不完整的
                 applicant_id=4 if status == "已领养" else None,
-                cover_url=f"/covers/cat{pic:02d}.jpg",
+                # 封面复用已有的 p01~p24（web/public/covers 里只有这批图，
+                # 之前写的 catNN.jpg 并不存在，会导致 404）
+                cover_url=f"/covers/p{pic:02d}.jpg",
             )
             for name, breed, age, health, city, status, pic in SEED
         ]

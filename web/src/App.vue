@@ -24,7 +24,7 @@ import { RouterLink, RouterView } from 'vue-router'
     </main>
 
     <footer class="foot">
-      <span>MVP 开发中 · 只做了地基</span>
+      <span>规则版可解释推荐 · 并发安全领养 · 24 篇内容 50 条埋点</span>
     </footer>
   </div>
 </template>

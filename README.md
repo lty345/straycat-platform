@@ -23,6 +23,15 @@
 
 ![内容列表](docs/screenshots/contents.png)
 
+领养抢占（点「申请领养」即可；成功或失败都会刷新列表——不让界面说谎）：
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/cats.png" alt="待领养的猫"><br><sub>待领养 5 只，每只可申请</sub></td>
+<td width="50%"><img src="docs/screenshots/cats-adopted.png" alt="申请后"><br><sub>小橘被申请后离开「待领养」筛选（共 4 只），再点会返回 20001</sub></td>
+</tr>
+</table>
+
 ## 技术栈
 
 | 分类 | 选型 |

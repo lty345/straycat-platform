@@ -106,7 +106,7 @@ onMounted(load)
         <button
           v-if="cat.status === '待领养'"
           class="btn"
-          :disabled="adoptingId !== null"
+          :disabled="adoptingId === cat.id"
           @click="onAdopt(cat)"
         >
           {{ adoptingId === cat.id ? '申请中…' : '申请领养' }}

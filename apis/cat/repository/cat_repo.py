@@ -1,8 +1,11 @@
-from sqlalchemy import update
+from sqlalchemy import func, select, update
 
 from db.model import Cat
 
 
+# -----------------------------------------------------------------------------
+# 一、抢占（写）
+# -----------------------------------------------------------------------------
 async def adopt_cat(db, cat_id: int, user_id: int) -> bool:
     """原子抢占：成功 True，被别人抢走 False。
 
@@ -19,3 +22,44 @@ async def adopt_cat(db, cat_id: int, user_id: int) -> bool:
     result = await db.execute(stmt)
     # 成败只看 rowcount：1 = 抢到，0 = 状态已被别人改掉（并发下必然只有一个 1）
     return result.rowcount == 1
+
+
+# -----------------------------------------------------------------------------
+# 二、列表（读）
+# -----------------------------------------------------------------------------
+def _apply_filters(stmt, status: str | None, city: str | None):
+    """把筛选条件拼到语句上。
+
+    ★ 为什么抽出来：list 和 count 必须用**同一套** where，
+      否则 total 和实际能翻到的条数对不上（这个坑在 event 模块踩过）。
+    """
+    if status:
+        stmt = stmt.where(Cat.status == status)
+    if city:
+        stmt = stmt.where(Cat.city == city)
+    return stmt
+
+
+async def list_cats(
+    db,
+    offset: int = 0,
+    limit: int = 20,
+    status: str | None = None,
+    city: str | None = None,
+) -> list[Cat]:
+    """分页查猫。
+
+    ★ 显式 order_by：不加排序时 MySQL 不保证顺序，翻页会出现重复/漏条。
+      用 id 升序（猫的数量少、且用户更关心"先登记的"），
+      想改成"新登记的在前"只需换成 Cat.id.desc()。
+    """
+    stmt = select(Cat)
+    stmt = _apply_filters(stmt, status, city)
+    stmt = stmt.order_by(Cat.id.asc()).offset(offset).limit(limit)
+    return list((await db.execute(stmt)).scalars().all())
+
+
+async def count_cats(db, status: str | None = None, city: str | None = None) -> int:
+    """符合条件的总条数（和 list_cats 共用同一套 where）。"""
+    stmt = _apply_filters(select(func.count()).select_from(Cat), status, city)
+    return (await db.execute(stmt)).scalar_one()

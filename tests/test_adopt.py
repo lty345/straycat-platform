@@ -45,6 +45,24 @@ async def _get_cat(cat_id):
         ).scalar_one()
 
 
+async def _wait_cat(cat_id, predicate, timeout: float = 2.0):
+    """等到猫的状态满足条件。
+
+    ★ 为什么需要它：FastAPI 的 yield 依赖在**响应发出之后**才执行 commit，
+      所以 POST 返回 200 后立刻查库，偶尔会读到提交前的旧数据。
+      用户无感，但测试会偶发失败 —— 用"轮询到成立为止"消除这个竞态。
+    """
+    loop = asyncio.get_running_loop()
+    deadline = loop.time() + timeout
+    cat = await _get_cat(cat_id)
+    while loop.time() < deadline:
+        if predicate(cat):
+            return cat
+        await asyncio.sleep(0.05)
+        cat = await _get_cat(cat_id)
+    return cat
+
+
 async def test_adopt_ok(client, two_cats):
     """抢一只待领养的猫：200，且数据库里状态和申请人真的变了。"""
     adoptable_id, _ = two_cats
@@ -53,7 +71,7 @@ async def test_adopt_ok(client, two_cats):
     assert res.status_code == 200, res.text
     assert res.json()["success"] is True
 
-    cat = await _get_cat(adoptable_id)
+    cat = await _wait_cat(adoptable_id, lambda c: c.status == "审核中")
     assert cat.status == "审核中", f"状态应变成「审核中」，实际「{cat.status}」"
     assert cat.applicant_id == 42, f"申请人应写入 42，实际 {cat.applicant_id}"
 
@@ -70,7 +88,7 @@ async def test_adopt_twice_rejected(client, two_cats):
     assert body["success"] is False
     assert body["api_code"] == 20001, f"应该是 20001，实际 {body['api_code']}"
 
-    cat = await _get_cat(adoptable_id)
+    cat = await _wait_cat(adoptable_id, lambda c: c.status == "审核中")
     assert cat.applicant_id == 1, "第一个申请人不能被覆盖"
 
 
@@ -111,7 +129,7 @@ async def test_adopt_concurrent_only_one_wins(client):
         )
         assert len(rejected) == 9, f"应该有 9 个被拒，实际 {len(rejected)} 个：{codes}"
 
-        cat = await _get_cat(cat_id)
+        cat = await _wait_cat(cat_id, lambda c: c.status == "审核中")
         assert cat.status == "审核中"
         assert cat.applicant_id in range(100, 110), "申请人必须是那 10 个之一"
     finally:

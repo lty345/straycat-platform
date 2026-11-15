@@ -9,7 +9,7 @@
 //             （数据量小，多一次请求换来"界面不说谎"，非常划算）
 // =============================================================================
 import { ref, onMounted } from 'vue'
-import { fetchCats, adoptCat } from '../api/cat'
+import { fetchCats, adoptCat, approveCat, rejectCat } from '../api/cat'
 
 // 演示用：还没有登录体系，固定用"小橘"（id=4）
 const CURRENT_USER_ID = 4
@@ -65,6 +65,28 @@ function pickStatus(s) {
   load()
 }
 
+// -----------------------------------------------------------------------------
+// 审核：状态机的最后一步（真实系统要管理员权限，这里做成演示按钮）
+// -----------------------------------------------------------------------------
+async function review(cat, action) {
+  adoptingId.value = cat.id
+  notice.value = ''
+  try {
+    if (action === 'approve') {
+      await approveCat(cat.id)
+      notice.value = `「${cat.name}」审核通过，已是已领养`
+    } else {
+      await rejectCat(cat.id)
+      notice.value = `已驳回「${cat.name}」，它重新开放申请`
+    }
+  } catch (e) {
+    notice.value = e.message      // 20003：该申请不存在或已被处理
+  } finally {
+    adoptingId.value = null
+    await load()                  // 和申请一样：成败都重新拉，界面不说谎
+  }
+}
+
 onMounted(load)
 </script>
 
@@ -111,9 +133,19 @@ onMounted(load)
         >
           {{ adoptingId === cat.id ? '申请中…' : '申请领养' }}
         </button>
-        <span v-else class="state-text">
-          {{ cat.status === '审核中' ? '有人正在申请' : '已被领养' }}
-        </span>
+
+        <!-- 审核中：管理员视角的两个出口（演示用，真实系统这里必须鉴权） -->
+        <div v-else-if="cat.status === '审核中'" class="review">
+          <span class="state-text">申请人 #{{ cat.applicant_id }} 等待审核</span>
+          <button class="btn" :disabled="adoptingId === cat.id" @click="review(cat, 'approve')">
+            通过
+          </button>
+          <button class="btn btn-ghost" :disabled="adoptingId === cat.id" @click="review(cat, 'reject')">
+            驳回
+          </button>
+        </div>
+
+        <span v-else class="state-text">已有家啦</span>
       </li>
     </ul>
   </section>
@@ -233,5 +265,23 @@ h1 {
 .state-text {
   color: var(--muted);
   font-size: 12px;
+}
+
+/* 审核中那一排：说明 + 两个按钮 */
+.review {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.review .state-text {
+  margin-right: 4px;
+}
+.btn-ghost {
+  border-color: var(--line);
+  color: var(--muted);
+}
+.btn-ghost:hover {
+  color: var(--fg);
 }
 </style>

@@ -25,6 +25,44 @@ async def adopt_cat(db, cat_id: int, user_id: int) -> bool:
 
 
 # -----------------------------------------------------------------------------
+# 一·补、审核（状态机闭环：审核中 → 已领养 / 待领养）
+# -----------------------------------------------------------------------------
+# ★ 这里和抢占是**同一套 CAS**，只是条件从"待领养"换成了"审核中"：
+#     - 通过：UPDATE ... WHERE id=? AND status='审核中'
+#     - 驳回：同一条，只是把状态改回"待领养"并清空申请人
+#   为什么不能"先查再改"：两个管理员同时点"通过/驳回"，
+#   会一个通过、一个驳回，最终状态取决于谁最后提交 —— 又是 TOCTOU。
+# -----------------------------------------------------------------------------
+async def approve_cat(db, cat_id: int) -> bool:
+    """审核通过：审核中 → 已领养。成功 True，状态不对 False。"""
+    stmt = (
+        update(Cat)
+        .where(
+            Cat.id == cat_id,
+            Cat.status == "审核中",     # ← 只有"审核中"才能通过
+        )
+        .values(status="已领养")
+    )
+    return (await db.execute(stmt)).rowcount == 1
+
+
+async def reject_cat(db, cat_id: int) -> bool:
+    """审核驳回：审核中 → 待领养，并清空申请人（让猫重新开放给别人申请）。"""
+    stmt = (
+        update(Cat)
+        .where(
+            Cat.id == cat_id,
+            Cat.status == "审核中",
+        )
+        .values(
+            status="待领养",
+            applicant_id=None,          # 驳回要把申请人清掉，否则这只猫"挂着别人的名字"
+        )
+    )
+    return (await db.execute(stmt)).rowcount == 1
+
+
+# -----------------------------------------------------------------------------
 # 二、列表（读）
 # -----------------------------------------------------------------------------
 def _apply_filters(stmt, status: str | None, city: str | None):

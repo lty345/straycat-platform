@@ -27,3 +27,14 @@ export function fetchCats({ status = '', city = '', page = 1, pageSize = 20 } = 
 export function adoptCat(catId, userId) {
   return client.post(`/api/v1/cats/${catId}/adopt`, { user_id: userId })
 }
+
+// -----------------------------------------------------------------------------
+// 审核（真实系统需要管理员权限，这里先当"演示开关"）
+// -----------------------------------------------------------------------------
+export function approveCat(catId) {
+  return client.post(`/api/v1/cats/${catId}/approve`)
+}
+
+export function rejectCat(catId) {
+  return client.post(`/api/v1/cats/${catId}/reject`)
+}

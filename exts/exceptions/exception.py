@@ -82,6 +82,8 @@ class ExceptionEnum(Enum):
     #     40000~49999 推荐 / 埋点
     ADOPT_TAKEN = (20001, "这只猫已被他人申请")
     ADOPT_DUPLICATE = (20002, "您已提交过申请")
+    ADOPT_NOT_PENDING = (20003, "该申请不存在或已被处理")
+    CAT_NOT_FOUND = (20004, "猫不存在")
 
     CONTENT_NOT_FOUND = (30001, "内容不存在")
 

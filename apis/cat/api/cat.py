@@ -52,3 +52,33 @@ async def adopt_cat(
     if not ok:
         raise BusinessError(ExceptionEnum.ADOPT_TAKEN)
     return Success(api_code=200, message="申请成功", result={"cat_id": cat_id, "status": "审核中"})
+
+
+# -----------------------------------------------------------------------------
+# 审核：状态机闭环的最后一步
+# -----------------------------------------------------------------------------
+# ⚠️ 真实系统这两个接口必须鉴权（只有管理员/救助站能调）。
+#    MVP 没有登录体系，所以先不做权限校验 —— 但要知道"这里本该有"。
+# -----------------------------------------------------------------------------
+@router_cat.post("/cats/{cat_id}/approve", summary="审核通过（管理员）")
+async def approve_cat(
+    cat_id: int = Path(..., ge=1, description="猫的 id"),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """审核通过：审核中 → 已领养。只能处理「审核中」的申请。"""
+    ok = await cat_repo.approve_cat(db, cat_id)
+    if not ok:
+        raise BusinessError(ExceptionEnum.ADOPT_NOT_PENDING)
+    return Success(api_code=200, message="审核通过", result={"cat_id": cat_id, "status": "已领养"})
+
+
+@router_cat.post("/cats/{cat_id}/reject", summary="驳回申请（管理员）")
+async def reject_cat(
+    cat_id: int = Path(..., ge=1, description="猫的 id"),
+    db: AsyncSession = Depends(get_db_session),
+):
+    """驳回申请：审核中 → 待领养，并清空申请人，让猫重新开放。"""
+    ok = await cat_repo.reject_cat(db, cat_id)
+    if not ok:
+        raise BusinessError(ExceptionEnum.ADOPT_NOT_PENDING)
+    return Success(api_code=200, message="已驳回，猫重新开放申请", result={"cat_id": cat_id, "status": "待领养"})

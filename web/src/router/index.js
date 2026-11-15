@@ -18,17 +18,22 @@ const routes = [
     name: 'content-detail',            // ← 这个名字第 9 步要用来跳转
     component: () => import('../views/ContentDetail.vue'),
   },
-  // 404：以后加页面时记得放最后，它兜底
+  {
+    path: '/feed',
+    name: 'feed',
+    component: () => import('../views/Feed.vue'),
+  },
+  {
+    path: '/cats',
+    name: 'cats',
+    component: () => import('../views/CatList.vue'),
+  },
+  // 404：必须放最后，它兜底
   {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('../views/NotFound.vue'),
   },
-  {
-  path: '/feed',
-  name: 'feed',
-  component: () => import('../views/Feed.vue'),
-},
 ]
 
 export default createRouter({

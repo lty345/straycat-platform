@@ -15,6 +15,7 @@ import { RouterLink, RouterView } from 'vue-router'
         <RouterLink to="/">概览</RouterLink>
         <RouterLink to="/contents">内容</RouterLink>
         <RouterLink to="/feed">推荐</RouterLink>
+        <RouterLink to="/cats">领养</RouterLink>
       </nav>
     </header>
 

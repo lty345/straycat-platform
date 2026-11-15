@@ -9,8 +9,8 @@ from db.model.Content import Content
 from db.model.UserEvent import UserEvent
 from db.database import Base
 from db.model.AppUser import AppUser
-
-__all__ = ["Base", "Content", "UserEvent", "AppUser"]
+from db.model.Cat import Cat
+__all__ = ["Base", "Content", "UserEvent", "AppUser", "Cat"]
 
 # 示例（以后照这个加）：
 # from db.model.Content import Content

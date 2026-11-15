@@ -48,6 +48,8 @@ async def seed() -> None:
                 health=health,
                 city=city,
                 status=status,
+                # 已领养的猫要有个领养人，否则"已领养"这条记录是不完整的
+                applicant_id=4 if status == "已领养" else None,
                 cover_url=f"/covers/cat{pic:02d}.jpg",
             )
             for name, breed, age, health, city, status, pic in SEED

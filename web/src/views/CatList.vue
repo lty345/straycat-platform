@@ -24,6 +24,7 @@ const notice = ref('')           // 顶部提示条（成功 / 失败文案）
 
 const FILTERS = [
   { value: '待领养', label: '待领养' },
+  { value: '审核中', label: '审核中' },
   { value: '已领养', label: '已领养' },
   { value: '', label: '全部' },
 ]
@@ -145,7 +146,9 @@ onMounted(load)
           </button>
         </div>
 
-        <span v-else class="state-text">已有家啦</span>
+        <span v-else class="state-text">
+          已有家啦<template v-if="cat.applicant_id">（领养人 #{{ cat.applicant_id }}）</template>
+        </span>
       </li>
     </ul>
   </section>

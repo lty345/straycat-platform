@@ -149,21 +149,25 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
+  /* 宽屏两列：单列时右侧一大片空白，看着"不饱满" */
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  gap: 12px;
 }
 /* 左缩略图 + 右内容 */
 .card {
   display: flex;
-  gap: 16px;
+  gap: 14px;
   border: 1px solid var(--line);
   background: var(--panel);
-  border-radius: 6px;
+  border-radius: 8px;
   padding: 12px;
-  margin-bottom: 12px;
-  transition: border-color 0.18s, transform 0.18s;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .card:hover {
   border-color: var(--violet);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
 }
 .thumb {
   flex-shrink: 0;
@@ -171,7 +175,7 @@ h1 {
   height: 100px;
   object-fit: cover;
   border-radius: 4px;
-  background: #0d0b14;
+  background: var(--bg-soft);
 }
 .body {
   flex: 1;

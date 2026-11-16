@@ -183,7 +183,7 @@ onMounted(async () => {
   background: var(--panel);
 }
 .card.bad {
-  border-color: #5a2b3a;
+  border-color: var(--bad);
 }
 .card-head {
   display: flex;
@@ -205,12 +205,12 @@ onMounted(async () => {
   color: var(--muted);
 }
 .b-ok {
-  color: #7fae8f;
-  border-color: #2f4a38;
+  color: var(--ok);
+  border-color: var(--ok);
 }
 .b-bad {
-  color: #c98a96;
-  border-color: #5a2b3a;
+  color: var(--bad);
+  border-color: var(--bad);
 }
 
 /* ---- 技术要点 ---- */

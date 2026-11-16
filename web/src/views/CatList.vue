@@ -254,7 +254,7 @@ h1 {
   height: 116px;
   border-radius: 4px;
   overflow: hidden;
-  background: #0d0b14;
+  background: var(--bg-soft);
 }
 .cover {
   width: 100%;
@@ -267,7 +267,7 @@ h1 {
   position: absolute;
   right: 8px;
   bottom: 8px;
-  background: rgba(10, 8, 16, 0.82);
+  background: var(--overlay);
   backdrop-filter: blur(2px);
 }
 

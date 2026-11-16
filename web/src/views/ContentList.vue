@@ -211,7 +211,7 @@ onMounted(() => {
   margin: 0;
 }
 .state-hint code {
-  background: #1d1926;
+  background: var(--bg-soft);
   color: var(--violet-l);
   padding: 1px 6px;
   border-radius: 2px;
@@ -245,7 +245,7 @@ onMounted(() => {
   position: relative;
   aspect-ratio: 16 / 9;
   overflow: hidden;
-  background: #0d0b14;
+  background: var(--bg-soft);
 }
 .cover {
   width: 100%;
@@ -261,7 +261,7 @@ onMounted(() => {
   position: absolute;
   left: 10px;
   top: 10px;
-  background: rgba(10, 8, 16, 0.82);
+  background: var(--overlay);
   backdrop-filter: blur(2px);
 }
 .card-body {
@@ -363,7 +363,7 @@ onMounted(() => {
 }
 .card:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--shadow);
 }
 .card,
 .card:hover {
@@ -421,7 +421,7 @@ onMounted(() => {
 .mood-btn.active {
   border-color: var(--violet);
   color: var(--violet-l);
-  background: #1d1926;
+  background: var(--bg-soft);
 }
 .mood-btn:disabled {
   opacity: 0.4;

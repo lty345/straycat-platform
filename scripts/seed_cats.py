@@ -27,7 +27,7 @@ from db.model import Cat
 
 # (名字, 品种, 月龄, 健康, 城市, 状态, 封面序号)
 SEED = [
-    ("小橘", "橘猫", 8, "已驱虫、已绝育", "广州", "待领养", 1),
+    ("小橘", "橘猫", 8, "已驱虫、已绝育", "广州", "审核中", 1),
     ("煤球", "黑猫", 14, "已驱虫", "广州", "待领养", 2),
     ("大福", "狸花", 24, "已驱虫、已绝育", "深圳", "待领养", 3),
     ("奶糖", "三花", 5, "已驱虫、待绝育", "深圳", "待领养", 4),
@@ -49,7 +49,7 @@ async def seed() -> None:
                 city=city,
                 status=status,
                 # 已领养的猫要有个领养人，否则"已领养"这条记录是不完整的
-                applicant_id=4 if status == "已领养" else None,
+                applicant_id=4 if status in ("审核中", "已领养") else None,
                 # 封面复用已有的 p01~p24（web/public/covers 里只有这批图，
                 # 之前写的 catNN.jpg 并不存在，会导致 404）
                 cover_url=f"/covers/p{pic:02d}.jpg",
@@ -65,8 +65,11 @@ async def seed() -> None:
     for c in all_rows:
         print(f"  id={c.id}  {c.name:<4} {c.breed:<4} {c.city:<4} {c.status}")
 
+    by_status = {}
+    for c in all_rows:
+        by_status[c.status] = by_status.get(c.status, 0) + 1
     wait = [c for c in all_rows if c.status == "待领养"]
-    print(f"\n待领养 {len(wait)} 只（可抢）｜已领养 {len(all_rows) - len(wait)} 只（抢会失败）")
+    print("\n" + " ｜ ".join(f"{k} {v} 只" for k, v in by_status.items()))
     if wait:
         print(f"并发测试建议用 id={wait[0].id}（{wait[0].name}）")
 

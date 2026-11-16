@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { fetchFeed } from '../api/feed'
 import { fetchUsers } from '../api/user'
+import CatFace from '../components/CatFace.vue'
 
 // ★ 用户列表从接口拿，不写死 id：
 //   种子脚本重跑会让 id 变（4/5/6 → 7/8/9），写死就会"用户不存在"。
@@ -35,6 +36,7 @@ function switchUser(id) {
 }
 
 onMounted(async () => {
+  loading.value = true   // 先进加载态，避免"共 0 只"闪一下
   try {
     users.value = await fetchUsers()
     if (users.value.length === 0) {
@@ -70,7 +72,10 @@ onMounted(async () => {
     <!-- 四态 -->
     <p v-if="error">出错了：{{ error }}</p>
     <p v-else-if="loading">加载中…</p>
-    <p v-else-if="items.length === 0">还没有可推荐的内容</p>
+    <div v-else-if="items.length === 0" class="empty">
+      <CatFace :size="52" />
+      <p>还没有可推荐的内容</p>
+    </div>
     <ul v-else class="list">
       <li v-for="it in items" :key="it.id" class="card">
         <img v-if="it.cover_url" class="thumb" :src="it.cover_url" alt="" loading="lazy" />
@@ -110,7 +115,7 @@ h1 {
 }
 .users button {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   color: var(--muted);
   font-size: 13px;
   padding: 7px 14px;
@@ -145,6 +150,19 @@ h1 {
 }
 
 /* ---- 列表 ---- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 56px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty p {
+  margin: 0;
+}
+
 .list {
   list-style: none;
   margin: 0;
@@ -158,23 +176,24 @@ h1 {
 .card {
   display: flex;
   gap: 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   background: var(--panel);
-  border-radius: 8px;
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
   padding: 12px;
   transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .card:hover {
   border-color: var(--violet);
   transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  box-shadow: var(--card-shadow-hover);
 }
 .thumb {
   flex-shrink: 0;
   width: 132px;
   height: 100px;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--bg-soft);
 }
 .body {

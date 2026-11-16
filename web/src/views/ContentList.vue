@@ -15,6 +15,7 @@
 
 import { ref, computed, onMounted } from 'vue'
 import { fetchContents } from '../api/content'
+import CatFace from '../components/CatFace.vue'
 
 const list = ref([])
 const total = ref(0)
@@ -168,7 +169,7 @@ onMounted(() => {
 
 .btn {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   color: var(--muted);
   font-size: 13px;
   padding: 5px 14px;
@@ -187,15 +188,19 @@ onMounted(() => {
 
 /* ---- 状态块 ---- */
 .state {
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   background: var(--panel);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 28px 20px;
   text-align: center;
 }
 .state-bad {
   border-color: var(--violet);
 }
+.state-cat {
+  margin: 0 auto 12px;
+}
+
 .state-title {
   font-size: 14px;
   margin-bottom: 8px;
@@ -227,18 +232,20 @@ onMounted(() => {
   gap: 16px;
 }
 .card {
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   background: var(--panel);
-  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
   overflow: hidden;          /* 让封面圆角跟着卡片走 */
   cursor: pointer;
-  transition: border-color 0.18s, transform 0.18s;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
   display: flex;
   flex-direction: column;
 }
 .card:hover {
   border-color: var(--violet);
   transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
 }
 /* 封面固定 16:9，图片怎么裁都不变形 */
 .cover-wrap {
@@ -285,7 +292,7 @@ onMounted(() => {
 .mood {
   font-size: 11px;
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   border-radius: 2px;
   padding: 1px 7px;
   white-space: nowrap;
@@ -345,7 +352,7 @@ onMounted(() => {
   font-size: 13px;
 }
 
-/* ---- 轻量过渡：列表淡入 + 卡片 hover 微抬 ----
+/* ---- 轻量过渡：列表淡入 ----
    ★ 只做 CSS，不引入 <transition> 组件——数据只有 20 条，
      上层过渡动画属于"演示加分、工程无用"的那一类 */
 @keyframes fade-up {
@@ -360,20 +367,6 @@ onMounted(() => {
 }
 .card {
   animation: fade-up 0.25s ease-out both;
-}
-.card:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow);
-}
-.card,
-.card:hover {
-  transition: border-color 0.15s, transform 0.15s, box-shadow 0.15s;
-}
-.cover {
-  width: 100%;
-  aspect-ratio: 16 / 9;   /* 强制 16:9，高度自动算 */
-  object-fit: cover;      /* 裁切填充，不拉伸 */
-  border-radius: 3px;
 }
 
 
@@ -406,7 +399,7 @@ onMounted(() => {
 }
 .mood-btn {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   color: var(--muted);
   font-size: 13px;
   padding: 5px 14px;

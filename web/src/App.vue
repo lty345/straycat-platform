@@ -1,13 +1,49 @@
 <script setup>
-// App.vue 只做两件事：外壳（导航条）+ 出口（router-view）
+// App.vue 做三件事：外壳（导航条）+ 装饰（爪印/小猫）+ 出口（router-view）
 import { RouterLink, RouterView } from 'vue-router'
+import CatFace from './components/CatFace.vue'
+
+// 背景爪印：位置、大小、旋转、动画延迟都写在这里，模板只负责渲染
+// （fixed 定位 + 低透明度，只在视觉边缘出现，不挡内容）
+const paws = [
+  { top: '16%', left: '4%', size: 34, rot: -18, delay: '0s' },
+  { top: '34%', left: '92%', size: 26, rot: 22, delay: '1.2s' },
+  { top: '62%', left: '6%', size: 22, rot: 12, delay: '2.4s' },
+  { top: '78%', left: '88%', size: 32, rot: -26, delay: '0.6s' },
+  { top: '48%', left: '96%', size: 18, rot: 8, delay: '1.8s' },
+  { top: '88%', left: '14%', size: 20, rot: -8, delay: '3s' },
+]
 </script>
 
 <template>
   <div class="shell">
+    <!-- 背景爪印：会缓慢上下浮动 -->
+    <div class="deco" aria-hidden="true">
+      <svg
+        v-for="(p, i) in paws"
+        :key="i"
+        class="paw"
+        viewBox="0 0 32 32"
+        :style="{
+          top: p.top,
+          left: p.left,
+          width: p.size + 'px',
+          height: p.size + 'px',
+          '--rot': p.rot + 'deg',
+          animationDelay: p.delay,
+        }"
+      >
+        <ellipse cx="16" cy="21" rx="7" ry="5.6" />
+        <circle cx="8.5" cy="11.5" r="2.8" />
+        <circle cx="14" cy="7.8" r="2.8" />
+        <circle cx="20.5" cy="8" r="2.8" />
+        <circle cx="25.8" cy="12.5" r="2.6" />
+      </svg>
+    </div>
+
     <header class="topbar">
       <div class="brand">
-        <span class="dia">◈</span>
+        <CatFace :size="26" class="brand-cat" />
         <span class="name">初尧</span>
         <span class="sub">stray cat</span>
       </div>
@@ -34,22 +70,60 @@ import { RouterLink, RouterView } from 'vue-router'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
 }
+
+/* ---- 背景爪印 ---- */
+.deco {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;   /* 关键：不挡点击 */
+  z-index: 0;
+}
+.paw {
+  position: absolute;
+  fill: var(--violet);
+  opacity: 0.13;
+  transform: rotate(var(--rot));
+  animation: drift 9s ease-in-out infinite;
+}
+@keyframes drift {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot));
+  }
+  50% {
+    transform: translateY(-10px) rotate(var(--rot));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .paw {
+    animation: none;
+  }
+}
+
+/* ---- 顶栏 ---- */
 .topbar {
+  position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 18px 28px;
-  border-bottom: 1px solid var(--line);
+  padding: 16px 28px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 253, 248, 0.72);
+  backdrop-filter: blur(6px);
 }
 .brand {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
 }
-.dia {
-  color: var(--violet);
-  font-size: 13px;
+.brand-cat {
+  transition: transform 0.25s;
+}
+.brand:hover .brand-cat {
+  transform: rotate(-8deg) scale(1.06);
 }
 .name {
   font-size: 17px;
@@ -81,16 +155,22 @@ import { RouterLink, RouterView } from 'vue-router'
   color: var(--violet-l);
   border-bottom-color: var(--violet);
 }
+
+/* ---- 内容区 ---- */
 .main {
+  position: relative;
+  z-index: 1;
   flex: 1;
-  padding: 32px 28px 48px;
+  padding: 36px 28px 56px;
   max-width: 1080px;
   width: 100%;
   margin: 0 auto;
 }
 .foot {
+  position: relative;
+  z-index: 1;
   padding: 16px 28px;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--border-soft);
   font-size: 12px;
   color: var(--muted);
 }

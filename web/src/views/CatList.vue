@@ -11,6 +11,7 @@
 import { ref, onMounted } from 'vue'
 import { fetchCats, adoptCat, approveCat, rejectCat } from '../api/cat'
 import { fetchUsers } from '../api/user'
+import CatFace from '../components/CatFace.vue'
 
 // 当前操作人：从用户列表里取第一个（不写死 id，重跑种子脚本也不会错）
 const currentUserId = ref(null)
@@ -90,6 +91,7 @@ async function review(cat, action) {
 }
 
 onMounted(async () => {
+  loading.value = true   // 先进加载态，避免"共 0 只"闪一下
   // 先拿"当前操作人"，再拉列表（不写死 id）
   try {
     const users = await fetchUsers()
@@ -124,7 +126,10 @@ onMounted(async () => {
 
     <p v-if="error">出错了：{{ error }}</p>
     <p v-else-if="loading">加载中…</p>
-    <p v-else-if="list.length === 0">这个条件下还没有猫</p>
+    <div v-else-if="list.length === 0" class="empty">
+      <CatFace :size="52" />
+      <p>这个条件下还没有猫</p>
+    </div>
     <ul v-else class="list">
       <li v-for="cat in list" :key="cat.id" class="card">
         <!-- 左图右文：图片用 object-fit: cover，任何尺寸都不会变形 -->
@@ -197,7 +202,7 @@ h1 {
 }
 .chip {
   background: transparent;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   color: var(--muted);
   font-size: 13px;
   padding: 5px 14px;
@@ -236,15 +241,17 @@ h1 {
 .card {
   display: flex;
   gap: 16px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   background: var(--panel);
-  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
   padding: 12px;
-  transition: border-color 0.18s, transform 0.18s;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
 .card:hover {
   border-color: var(--violet);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
 }
 
 .cover-wrap {
@@ -252,7 +259,7 @@ h1 {
   flex-shrink: 0;
   width: 150px;
   height: 116px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   overflow: hidden;
   background: var(--bg-soft);
 }
@@ -295,7 +302,7 @@ h1 {
 .badge {
   font-size: 11px;
   color: var(--muted);
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   border-radius: 2px;
   padding: 1px 7px;
 }
@@ -339,6 +346,19 @@ h1 {
   opacity: 0.45;
   cursor: not-allowed;
 }
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 48px 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.empty p {
+  margin: 0;
+}
+
 .state-text {
   color: var(--muted);
   font-size: 12px;

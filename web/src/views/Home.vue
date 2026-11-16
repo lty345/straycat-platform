@@ -132,9 +132,10 @@ onMounted(async () => {
 }
 .entry {
   position: relative;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   background: var(--panel);
-  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+  border-radius: var(--radius);
   padding: 18px;
   text-decoration: none;
   display: flex;
@@ -176,8 +177,9 @@ onMounted(async () => {
 
 /* ---- 通用卡片 ---- */
 .card {
-  border: 1px solid var(--line);
-  border-radius: 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  box-shadow: var(--card-shadow);
   padding: 18px 20px;
   margin-bottom: 16px;
   background: var(--panel);
@@ -201,7 +203,7 @@ onMounted(async () => {
   font-size: 12px;
   padding: 2px 10px;
   border-radius: 2px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border-soft);
   color: var(--muted);
 }
 .b-ok {

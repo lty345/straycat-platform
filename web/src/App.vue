@@ -42,7 +42,9 @@ const paws = [
       <div class="brand">
         <CatFace :size="26" class="brand-cat" />
         <span class="name">初尧</span>
-        <span class="sub">stray cat</span>
+        <span class="sub" title="陆游《十一月四日风雨大作·其一》：溪柴火软蛮毡暖，我与狸奴不出门">
+          我与狸奴不出门
+        </span>
       </div>
       <nav class="nav">
         <RouterLink to="/">概览</RouterLink>
@@ -127,10 +129,11 @@ const paws = [
   color: var(--fg);
 }
 .sub {
-  font-size: 11px;
-  letter-spacing: 1.5px;
+  font-size: 12px;
+  letter-spacing: 1px;
   color: var(--muted);
-  text-transform: uppercase;
+  opacity: 0.85;
+  cursor: default;
 }
 .nav {
   display: flex;

@@ -1,10 +1,11 @@
 <script setup>
 import { RouterLink } from 'vue-router'
+import CatFace from '../components/CatFace.vue'
 </script>
 
 <template>
   <div class="nf">
-    <div class="dia">◈</div>
+    <CatFace :size="64" class="nf-cat" />
     <p class="t">这个页面不存在</p>
     <RouterLink class="back" to="/">回概览</RouterLink>
   </div>
@@ -15,10 +16,8 @@ import { RouterLink } from 'vue-router'
   text-align: center;
   padding: 80px 20px;
 }
-.dia {
-  color: var(--violet);
-  font-size: 20px;
-  margin-bottom: 14px;
+.nf-cat {
+  margin: 0 auto 16px;
 }
 .t {
   color: var(--muted);

@@ -1,21 +1,22 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchFeed } from '../api/feed'
-import { fetchUsers } from '../api/user'
-import CatFace from '../components/CatFace.vue'
+import { useRouter } from 'vue-router'
+// 演示用的三个用户（id 来自 scripts/seed_users_events.py，重跑脚本后 id 会变）
+const USERS = [
+  { id: 4, name: '小橘', desc: '橘猫 / 日常' },
+  { id: 5, name: '阿救', desc: '救助 / 科普' },
+  { id: 6, name: '路过的新人', desc: '冷启动' },
+]
 
-// ★ 用户列表从接口拿，不写死 id：
-//   种子脚本重跑会让 id 变（4/5/6 → 7/8/9），写死就会"用户不存在"。
-const users = ref([])
-const userId = ref(null)
-
+const userId = ref(4)
 const data = ref(null)      // 接口返回的整个 result
 const loading = ref(false)
 const error = ref('')
-
-const items   = computed(() => data.value?.list ?? [])                 // data 里的 list
-const coldStart = computed(() => data.value?.cold_start ?? false)      // ★ 后端是下划线：cold_start
-const preferredMood = computed(() => data.value?.preferred_mood ?? null)  // ★ 后端是下划线：preferred_mood
+const router = useRouter()
+const items   = computed(() => data.value?.list ?? [])              // data 里的 list
+const coldStart = computed(() => data.value?.cold_start ?? false)            // data 里的 cold_start
+const preferredMood = computed(() => data.value?.preferred_mood ?? null)        // data 里的 preferred_mood
 
 async function load() {
   loading.value = true
@@ -30,25 +31,16 @@ async function load() {
   }
 }
 
+function openDetail(it) {
+  router.push({ name: 'content-detail', params: { id: it.id } })
+}
+
 function switchUser(id) {
   userId.value = id
   load()          // 换人立刻重拉
 }
 
-onMounted(async () => {
-  loading.value = true   // 先进加载态，避免"共 0 只"闪一下
-  try {
-    users.value = await fetchUsers()
-    if (users.value.length === 0) {
-      error.value = '还没有用户，先跑 scripts/seed_users_events.py'
-      return
-    }
-    userId.value = users.value[0].id       // 默认选第一个
-    await load()
-  } catch (e) {
-    error.value = e.message
-  }
-})
+onMounted(load)
 </script>
 
 <template>
@@ -57,10 +49,10 @@ onMounted(async () => {
 
     <!-- 用户切换：点一下换一个人，看顺序怎么变 -->
     <div class="users">
-      <button v-for="u in users" :key="u.id"
+      <button v-for="u in USERS" :key="u.id"
               :class="{ on: userId === u.id }"
               @click="switchUser(u.id)">
-        {{ u.nickname }}<small>{{ u.interest_tags || '冷启动' }}</small>
+        {{ u.name }}<small>{{ u.desc }}</small>
       </button>
     </div>
 
@@ -72,13 +64,16 @@ onMounted(async () => {
     <!-- 四态 -->
     <p v-if="error">出错了：{{ error }}</p>
     <p v-else-if="loading">加载中…</p>
-    <div v-else-if="items.length === 0" class="empty">
-      <CatFace :size="52" />
-      <p>还没有可推荐的内容</p>
-    </div>
+    <p v-else-if="items.length === 0">还没有可推荐的内容</p>
     <ul v-else class="list">
-      <li v-for="it in items" :key="it.id" class="card">
-        <img v-if="it.cover_url" class="thumb" :src="it.cover_url" alt="" loading="lazy" />
+      <li v-for="it in items" :key="it.id" class="card" @click="openDetail(it)">
+        <img
+          v-if="it.cover_url"
+          class="thumb"
+          :src="it.cover_url"
+          :alt="it.title"
+          loading="lazy"
+        />
         <div class="body">
           <div class="top">
             <span class="title">{{ it.title }}</span>
@@ -115,7 +110,7 @@ h1 {
 }
 .users button {
   background: transparent;
-  border: 1px solid var(--border-soft);
+  border: 1px solid var(--line);
   color: var(--muted);
   font-size: 13px;
   padding: 7px 14px;
@@ -150,30 +145,17 @@ h1 {
 }
 
 /* ---- 列表 ---- */
-.empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 56px 0;
-  color: var(--muted);
-  font-size: 13px;
-}
-.empty p {
-  margin: 0;
-}
-
 .list {
   list-style: none;
   margin: 0;
   padding: 0;
-  /* 宽屏两列：单列时右侧一大片空白，看着"不饱满" */
+  /* 宽屏两列，窄屏一列 */
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
   gap: 12px;
 }
-/* 左缩略图 + 右内容 */
 .card {
+  cursor: pointer;
   display: flex;
   gap: 14px;
   border: 1px solid var(--border-soft);
@@ -188,6 +170,7 @@ h1 {
   transform: translateY(-2px);
   box-shadow: var(--card-shadow-hover);
 }
+/* 封面缩略图：固定尺寸 + object-fit，任何图都不变形 */
 .thumb {
   flex-shrink: 0;
   width: 132px;
@@ -208,8 +191,7 @@ h1 {
   margin-bottom: 6px;
 }
 .title {
-  font-size: 16px;
-  font-weight: 500;
+  font-size: 15px;
   color: var(--fg);
 }
 /* 分数用等宽 + 亮紫色，让人一眼看到排序依据 */
@@ -224,7 +206,6 @@ h1 {
   font-size: 13px;
   line-height: 1.7;
   margin: 0 0 8px;
-  /* 最多两行，超出省略——列表里不需要整段摘要 */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;

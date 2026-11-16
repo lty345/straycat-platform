@@ -21,7 +21,7 @@ const list = ref([])
 const total = ref(0)
 const page = ref(1)
 const loading = ref(false)
-const PAGE_SIZE = 10
+const PAGE_SIZE = 12   // 3 列 × 4 行，整除，避免最后一行只剩一张
 const error = ref('')
 const mood = ref('')
 

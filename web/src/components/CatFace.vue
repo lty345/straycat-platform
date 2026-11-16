@@ -1,118 +1,53 @@
 <script setup>
 // =============================================================================
-// components/CatFace.vue —— 会眨眼的小猫（纯 SVG + CSS 动画，零依赖）
+// components/CatFace.vue —— 小猫图案
 // =============================================================================
-// 为什么用 SVG 而不是图片：
-//   ① 颜色直接用 CSS 变量，换主题不用重做图
-//   ② 动画可以只作用于局部（这里只让"眼睛"眨），图片做不到
-//   ③ 体积几乎为 0，任意放大不糊
+// 图形来自 Twemoji（🐱 U+1F431），CC-BY 4.0 许可，见 README「素材来源」。
+// 为什么用现成的而不是自己画：手绘的 SVG 在小尺寸下五官挤在一起，
+// 现成的 emoji 图形在 16~64px 都经得住看。
 //
-// 构图顺序很重要：耳朵 → 头 → 五官。
-//   耳朵先画、头后画，耳朵的下半截就被头盖住，看起来是"长在头上"。
+// 动画：整只猫轻微上下浮 + 摆头，3.2 秒一个来回。
+//      （图片没法做"眨眼"，所以换成整体的小晃动，观感更自然）
 // =============================================================================
+import catUrl from '../assets/cat-face.svg'
+
 defineProps({
   size: { type: Number, default: 24 },
 })
 </script>
 
 <template>
-  <svg
+  <img
+    :src="catUrl"
     :width="size"
     :height="size"
-    viewBox="0 0 48 48"
     class="cat-face"
-    role="img"
-    aria-label="小猫"
-  >
-    <!-- 1. 外耳 -->
-    <path class="ear" d="M13 20 L8.5 5 L22 12 Z" />
-    <path class="ear" d="M35 20 L39.5 5 L26 12 Z" />
-    <!-- 2. 内耳（浅色，让耳朵有层次） -->
-    <path class="ear-inner" d="M14 19 L11.6 9.5 L19.8 14 Z" />
-    <path class="ear-inner" d="M34 19 L36.4 9.5 L28.2 14 Z" />
-    <!-- 3. 头（盖住耳朵根部） -->
-    <ellipse class="head" cx="24" cy="28" rx="13.6" ry="12" />
-    <!-- 4. 眼睛：白眼球 + 深瞳孔 + 高光，靠 scaleY 做眨眼 -->
-    <g class="eyes">
-      <ellipse class="eye-white" cx="19" cy="26.5" rx="2.7" ry="3.2" />
-      <ellipse class="eye-white" cx="29" cy="26.5" rx="2.7" ry="3.2" />
-      <ellipse class="pupil" cx="19" cy="27" rx="1.5" ry="2.1" />
-      <ellipse class="pupil" cx="29" cy="27" rx="1.5" ry="2.1" />
-      <circle class="spark" cx="19.7" cy="25.8" r="0.55" />
-      <circle class="spark" cx="29.7" cy="25.8" r="0.55" />
-    </g>
-    <!-- 5. 鼻子 + 嘴 -->
-    <path class="nose" d="M24 31.2 l-1.5 1.5 h3 Z" />
-    <path class="mouth" d="M24 32.7 v1.3 M24 34 q-1.6 1.6 -3 0 M24 34 q1.6 1.6 3 0" />
-    <!-- 6. 胡须 -->
-    <path class="whisker" d="M12.5 30.5 h-6.5 M12.5 33.5 h-6.5 M35.5 30.5 h6.5 M35.5 33.5 h6.5" />
-  </svg>
+    alt=""
+    aria-hidden="true"
+    draggable="false"
+  />
 </template>
 
 <style scoped>
 .cat-face {
   display: block;
-  overflow: visible;
-}
-.head {
-  fill: var(--violet);
-}
-.ear {
-  fill: var(--violet);
-  opacity: 0.8;
-}
-.ear-inner {
-  fill: var(--bg);
-  opacity: 0.55;
-}
-.eye-white {
-  fill: #fffaf0;
-}
-.pupil {
-  fill: #3a2a1c;
-}
-.spark {
-  fill: #fffaf0;
-}
-.nose {
-  fill: #fffaf0;
-  opacity: 0.95;
-}
-.mouth {
-  fill: none;
-  stroke: var(--bg);
-  stroke-width: 1;
-  stroke-linecap: round;
-  opacity: 0.75;
-}
-.whisker {
-  stroke: var(--violet-l);
-  stroke-width: 1;
-  stroke-linecap: round;
-  opacity: 0.5;
+  user-select: none;
+  transform-origin: 50% 92%;
+  animation: bob 3.2s ease-in-out infinite;
 }
 
-/* 眨眼：以两眼中间为原点纵向压扁（5 秒一次，一次 0.3 秒，不会太闹） */
-.eyes {
-  transform-origin: 24px 26.5px;
-  animation: blink 5s ease-in-out infinite;
-}
-@keyframes blink {
+@keyframes bob {
   0%,
-  90%,
   100% {
-    transform: scaleY(1);
+    transform: translateY(0) rotate(0deg);
   }
-  93% {
-    transform: scaleY(0.12);
-  }
-  96% {
-    transform: scaleY(1);
+  50% {
+    transform: translateY(-2px) rotate(-4deg);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .eyes {
+  .cat-face {
     animation: none;
   }
 }

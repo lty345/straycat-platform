@@ -2,6 +2,7 @@
 // App.vue 做三件事：外壳（导航条）+ 装饰（爪印/小猫）+ 出口（router-view）
 import { RouterLink, RouterView } from 'vue-router'
 import CatFace from './components/CatFace.vue'
+import pawUrl from './assets/paw.svg'
 
 // 背景爪印：位置、大小、旋转、动画延迟都写在这里，模板只负责渲染
 // （fixed 定位 + 低透明度，只在视觉边缘出现，不挡内容）
@@ -19,11 +20,13 @@ const paws = [
   <div class="shell">
     <!-- 背景爪印：会缓慢上下浮动 -->
     <div class="deco" aria-hidden="true">
-      <svg
+      <img
         v-for="(p, i) in paws"
         :key="i"
+        :src="pawUrl"
         class="paw"
-        viewBox="0 0 32 32"
+        alt=""
+        draggable="false"
         :style="{
           top: p.top,
           left: p.left,
@@ -32,13 +35,7 @@ const paws = [
           '--rot': p.rot + 'deg',
           animationDelay: p.delay,
         }"
-      >
-        <ellipse cx="16" cy="21" rx="7" ry="5.6" />
-        <circle cx="8.5" cy="11.5" r="2.8" />
-        <circle cx="14" cy="7.8" r="2.8" />
-        <circle cx="20.5" cy="8" r="2.8" />
-        <circle cx="25.8" cy="12.5" r="2.6" />
-      </svg>
+      />
     </div>
 
     <header class="topbar">
@@ -82,8 +79,7 @@ const paws = [
 }
 .paw {
   position: absolute;
-  fill: var(--violet);
-  opacity: 0.13;
+  opacity: 0.14;
   transform: rotate(var(--rot));
   animation: drift 9s ease-in-out infinite;
 }

@@ -213,6 +213,11 @@ uv run pytest -q
 
 > 测试是否真的有效，用"故意改坏"来验证：把分页 `offset` 改成固定 0，`test_list_total_matches_across_pages` 应立刻变红。
 
+## 素材来源
+
+- 猫咪（🐱）与爪印（🐾）图形来自 [Twemoji](https://github.com/jdecked/twemoji)，CC-BY 4.0。
+- 文章封面图来自 [cataas](https://cataas.com)（随机猫片），仅用于演示。
+
 ## 待办
 
 - [x] `content` / `user_event` / `app_user` / `cat` 四张表

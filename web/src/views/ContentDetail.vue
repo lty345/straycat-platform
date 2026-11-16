@@ -1,13 +1,16 @@
 <script setup>
-import { ref, onMounted } from 'vue'                 // 注意：没有 computed，也不需要 list
+import { postEvent } from '../api/event'
+import { ref, onMounted,onUnmounted } from 'vue'                 // 注意：没有 computed，也不需要 list
 import { useRoute, useRouter } from 'vue-router'     // 读参数 + 返回
 import { fetchContentDetail } from '../api/content'
+import { fetchUsers } from '../api/user'
 
-
+const contentId = ref(null)
 const item = ref(null)        // 详情对象；null = 还没有
 const loading = ref(true)
 const error = ref('')
-
+const enterAt = ref(0)     // 进入时间戳；0 = 还没开始计时
+const userId = ref(null)   // 当前演示用户
 const route = useRoute()      // 地址牌：读 params
 const router = useRouter()    // 遥控器：做 back()
 
@@ -15,7 +18,11 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
+    contentId.value = Number(route.params.id)
     item.value = await fetchContentDetail(route.params.id)
+    enterAt.value = Date.now()      // 内容加载成功才开始计时
+    const users = await fetchUsers()
+    userId.value = users.length ? users[0].id : null
   } catch (e) {
     error.value = e.message       // "内容不存在" / "参数错误" 都在这里
     item.value = null             // ← 别忘：失败要把旧数据清掉
@@ -24,6 +31,27 @@ async function load() {
   }
 }
 
+let reported = false          // 防止重复上报
+
+async function reportView() {
+  // 空1：什么情况下不发？
+  if (reported==true||!item.value||!userId.value||!enterAt.value) return
+  reported = true
+
+  try {
+    await postEvent({
+      user_id: userId.value,                      // 空2
+      target_type: 'content',
+      target_id: contentId.value,
+      event: 'view',
+      duration_ms: Date.now()-enterAt.value                 // 空3：停留了多久
+    })
+  } catch (e) {
+                                     // 空4：失败了怎么办
+  }
+}
+
+onUnmounted(reportView)       // 离开页面时上报
 onMounted(load)
 </script>
 

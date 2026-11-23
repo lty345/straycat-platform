@@ -150,6 +150,24 @@ const paws = [
 .nav a:hover {
   color: var(--fg);
 }
+/* 窄屏：导航会挤爆（390px 宽时"推荐/领养"被裁掉） */
+@media (max-width: 640px) {
+  .topbar {
+    padding: 12px 16px;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .sub {
+    display: none;
+  }
+  .nav {
+    gap: 14px;
+  }
+  .nav a {
+    font-size: 13px;
+  }
+}
+
 .nav a.router-link-active {
   color: var(--violet-l);
   border-bottom-color: var(--violet);

@@ -96,6 +96,7 @@ onMounted(load)
 <style scoped>
 .hero {
   width: 100%;
+  max-height: 420px;   /* 宽屏下 16:9 会到 560px，太高了 */
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: 4px;

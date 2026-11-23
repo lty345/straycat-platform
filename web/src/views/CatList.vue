@@ -135,13 +135,13 @@ onMounted(async () => {
         <!-- 左图右文：图片用 object-fit: cover，任何尺寸都不会变形 -->
         <div class="cover-wrap">
           <img v-if="cat.cover_url" class="cover" :src="cat.cover_url" :alt="cat.name" loading="lazy" />
-          <div class="badge" :data-status="cat.status">{{ cat.status }}</div>
         </div>
 
         <div class="body">
           <div class="top">
             <span class="name">{{ cat.name }}</span>
             <span class="breed">{{ cat.breed }}</span>
+            <span class="badge" :data-status="cat.status">{{ cat.status }}</span>
           </div>
           <p class="meta">{{ cat.age_month }} 个月 · {{ cat.city }}</p>
           <p class="health">{{ cat.health }}</p>
@@ -233,7 +233,7 @@ h1 {
   padding: 0;
   /* 宽屏两列、窄屏一列：比整行拉满好看，也少留白 */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(430px, 100%), 1fr))  /* min(...)：窄屏时列宽不超过视口，否则横向溢出 */;
   gap: 14px;
 }
 
@@ -269,13 +269,10 @@ h1 {
   object-fit: cover;
   display: block;
 }
-/* 状态徽章压在图片右下角 */
-.cover-wrap .badge {
-  position: absolute;
-  right: 8px;
-  bottom: 8px;
-  background: var(--overlay);
-  backdrop-filter: blur(2px);
+/* 状态徽章跟在猫名后面（原来压在图片上，遮住照片） */
+.body .top .badge {
+  margin-left: auto;
+  flex-shrink: 0;
 }
 
 .body {

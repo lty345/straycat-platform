@@ -92,12 +92,65 @@ onMounted(async () => {
         <span>后端连通性</span>
         <span class="badge" :class="failed ? 'b-bad' : 'b-ok'">{{ status }}</span>
       </div>
-      <pre class="mono">{{ detail || '—' }}</pre>
+      <p class="health-line">
+        <span class="dot" :class="failed ? 'b-bad' : 'b-ok'"></span>
+        <span v-if="failed">{{ detail }}</span>
+        <span v-else>接口正常响应（<code>GET /health</code>）</span>
+      </p>
+      <details v-if="!failed" class="health-raw">
+        <summary>查看原始响应</summary>
+        <pre class="mono">{{ detail }}</pre>
+      </details>
     </div>
   </section>
 </template>
 
 <style scoped>
+.health-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.health-line code {
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 12px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: var(--bg-soft);
+}
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot.b-ok {
+  background: var(--ok, #4f9d69);
+}
+.dot.b-bad {
+  background: var(--bad, #c0563f);
+}
+.health-raw {
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.health-raw summary {
+  cursor: pointer;
+  user-select: none;
+}
+.health-raw pre {
+  margin: 8px 0 0;
+  padding: 10px;
+  background: var(--bg-soft);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 11px;
+}
 .eyebrow {
   font-family: ui-monospace, Consolas, monospace;
   font-size: 11px;

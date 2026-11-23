@@ -228,7 +228,7 @@ onMounted(() => {
   margin: 0 0 20px;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr))  /* min(...)：窄屏时列宽不超过视口，否则横向溢出 */;
   gap: 16px;
 }
 .card {

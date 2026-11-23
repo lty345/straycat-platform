@@ -1,15 +1,12 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { fetchFeed } from '../api/feed'
+import { fetchUsers } from '../api/user'
 import { useRouter } from 'vue-router'
-// 演示用的三个用户（id 来自 scripts/seed_users_events.py，重跑脚本后 id 会变）
-const USERS = [
-  { id: 4, name: '小橘', desc: '橘猫 / 日常' },
-  { id: 5, name: '阿救', desc: '救助 / 科普' },
-  { id: 6, name: '路过的新人', desc: '冷启动' },
-]
 
-const userId = ref(4)
+// ★ 不再硬编码 id：种子脚本重跑、id 变化后界面就点不动了
+const users = ref([])
+const userId = ref(null)
 const data = ref(null)      // 接口返回的整个 result
 const loading = ref(false)
 const error = ref('')
@@ -19,6 +16,7 @@ const coldStart = computed(() => data.value?.cold_start ?? false)            // 
 const preferredMood = computed(() => data.value?.preferred_mood ?? null)        // data 里的 preferred_mood
 
 async function load() {
+  if (!userId.value) return
   loading.value = true
   error.value = ''
   try {
@@ -40,7 +38,20 @@ function switchUser(id) {
   load()          // 换人立刻重拉
 }
 
-onMounted(load)
+onMounted(async () => {
+  try {
+    const list = await fetchUsers()
+    users.value = list.map((u) => ({
+      id: u.id,
+      name: u.nickname,
+      desc: u.interest_tags || '冷启动',
+    }))
+    if (users.value.length) userId.value = users.value[0].id
+  } catch (e) {
+    error.value = e.message
+  }
+  await load()
+})
 </script>
 
 <template>
@@ -49,7 +60,7 @@ onMounted(load)
 
     <!-- 用户切换：点一下换一个人，看顺序怎么变 -->
     <div class="users">
-      <button v-for="u in USERS" :key="u.id"
+      <button v-for="u in users" :key="u.id"
               :class="{ on: userId === u.id }"
               @click="switchUser(u.id)">
         {{ u.name }}<small>{{ u.desc }}</small>
@@ -149,9 +160,10 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
+  align-items: stretch;
   /* 宽屏两列，窄屏一列 */
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(480px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(480px, 100%), 1fr))  /* min(...)：窄屏时列宽不超过视口，否则横向溢出 */;
   gap: 12px;
 }
 .card {
@@ -228,7 +240,9 @@ h1 {
   border-left: 2px solid var(--line);
   padding: 2px 0 2px 10px;
   margin: 0;
-  word-break: break-all;
+  /* 按词换行：break-all 会把 "热度×0.00" 从中间劈开，很难看 */
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 
 /* ---- 窄屏 ---- */
@@ -244,6 +258,21 @@ h1 {
   .meta {
     flex-wrap: wrap;
     gap: 8px;
+  }
+}
+
+/* 手机端：缩略图缩小，正文多一点宽度 */
+@media (max-width: 560px) {
+  .thumb {
+    width: 92px;
+    height: 92px;
+  }
+  .card {
+    gap: 10px;
+    padding: 10px;
+  }
+  .reason {
+    font-size: 10.5px;
   }
 }
 </style>

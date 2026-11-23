@@ -15,7 +15,10 @@ ENV PYTHONUNBUFFERED=1 \
 WORKDIR /app
 
 # 1) 先装依赖（利用 Docker 层缓存：只改代码时不用重装）
-RUN pip install --no-cache-dir \
+#    ★ 用阿里云 PyPI 镜像：国内直连 pypi.org 极慢甚至超时
+#      （如果你在海外部署，把 PIP_INDEX 换成 https://pypi.org/simple 即可）
+ARG PIP_INDEX=https://mirrors.aliyun.com/pypi/simple/
+RUN pip install --no-cache-dir -i ${PIP_INDEX} \
     "fastapi[standard]>=0.148.0" \
     "uvicorn[standard]>=0.54.0" \
     "sqlalchemy[asyncio]>=2.1.5" \

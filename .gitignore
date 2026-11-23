@@ -44,3 +44,5 @@ package-lock.json.bak
 _tmp_*
 _probe_*
 .env.cloud
+deploy/.env
+deploy/data/

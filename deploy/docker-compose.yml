@@ -1,0 +1,59 @@
+# =============================================================================
+# deploy/docker-compose.yml —— 生产部署编排（MySQL + FastAPI + Nginx）
+# =============================================================================
+# 三个容器：
+#   db   : MySQL 8          （数据用 volume 持久化，容器删了数据还在）
+#   api  : 你的 FastAPI     （只在 compose 内网暴露 8080，不直接对公网）
+#   web  : Nginx            （对公网暴露 HOST_PORT；静态文件 + 反代 /api）
+#
+# 访问链路：
+#   浏览器 → web:80 → 静态文件 或 /api → api:8080 → db:3306
+# =============================================================================
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}   # ← 填在 deploy/.env
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+    command:
+      # 1.6G 内存的机器上，默认 buffer pool 太大，压到 256M
+      - --innodb-buffer-pool-size=256M
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    volumes:
+      - ./data/mysql:/var/lib/mysql    # ★ 持久化：删容器不丢数据
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: ..            # 用仓库根的 Dockerfile
+    restart: unless-stopped
+    environment:
+      ASYNC_DB_DRIVER: mysql+aiomysql
+      ASYNC_DB_HOST: db        # ★ 容器间用服务名互相访问（这就是 compose 的内网 DNS）
+      ASYNC_DB_PORT: 3306
+      ASYNC_DB_USER: root
+      ASYNC_DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      ASYNC_DB_DATABASE: ${MYSQL_DATABASE}
+      ASYNC_DB_SSL: "false"
+      CORS_ALLOW_ORIGINS: ${CORS_ALLOW_ORIGINS}
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+      db:
+        condition: service_healthy    # 等 MySQL 真正能连了再启动
+
+  web:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "${HOST_PORT}:80"      # ← 宿主机端口，填在 deploy/.env
+    volumes:
+      - ../web/dist:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - api

@@ -26,6 +26,9 @@ from db.database import async_engine                        # noqa: E402
 from exts.exceptions.exception import ApiExceptionHandler   # noqa: E402
 from exts.responses.json_response import Success            # noqa: E402
 from middlewares.loger.logmiddleware import setup_log_middleware  # noqa: E402
+from config.config import get_settings                      # noqa: E402
+
+Settings = get_settings()   # ★ 必须真的有这一行，不是光 import
 
 
 # ---- lifespan：服务开机 / 关机各跑一次 ---------------------------------------
@@ -49,7 +52,7 @@ setup_log_middleware(app)
 # 这样即便路由抛错，响应也带跨域头（否则前端只能看到 CORS 错误，看不到真正错误）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],  # Vite 默认端口
+    allow_origins=[o.strip() for o in Settings.CORS_ALLOW_ORIGINS.split(",") if o.strip()],  # 从 .env 读，线上把静态托管域名加进去
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -14,10 +14,12 @@
 // =============================================================================
 import axios from 'axios'
 
+// 开发时留空 → 走 Vite 的 proxy（见 vite.config.js）
+// 部署时用 VITE_API_BASE 指向后端公网地址，例如 https://xxx.ap-shanghai.app.tcloudbase.com
+const API_BASE = import.meta.env.VITE_API_BASE || '/'
+
 const client = axios.create({
-  // 用相对路径，走 Vite 的 proxy（见 vite.config.js）
-  // ★ 不要写死 http://127.0.0.1:8000 —— 部署时会全部返工
-  baseURL: '/',
+  baseURL: API_BASE,
   timeout: 10000,
 })
 

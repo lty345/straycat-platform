@@ -1,0 +1,18 @@
+# 构建镜像时排除的文件（传输更快、镜像更小）
+.venv/
+web/
+docs/
+log/
+logs/
+tests/
+scripts/
+node_modules/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.gitignore
+.env
+.env.*
+README.md
+cloudbase/

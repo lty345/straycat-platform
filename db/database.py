@@ -52,10 +52,16 @@ else:
     )
 
 # ---- 2) 创建异步引擎 -------------------------------------------------------
+# PostgreSQL（CloudBase 等云库）通常要求 SSL；本地 MySQL 不需要
+connect_args = {}
+if Settings.ASYNC_DB_DRIVER.startswith("postgresql") and Settings.ASYNC_DB_SSL:
+    connect_args["ssl"] = True
+
 async_engine = create_async_engine(
     db_url,
     echo=Settings.ASYNC_DB_ECHO,
     pool_pre_ping=True,      # 取连接前先 ping，防止拿到 MySQL 已断开的死连接
+    connect_args=connect_args,
     **pool_kwargs,
 )
 

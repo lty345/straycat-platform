@@ -43,3 +43,4 @@ package-lock.json.bak
 .memsearch/
 _tmp_*
 _probe_*
+.env.cloud

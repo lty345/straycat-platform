@@ -17,8 +17,13 @@ class Settings(BaseSettings):
     ASYNC_DB_PASSWORD:str=""
     ASYNC_DB_DATABASE:str="straycat"
     ASYNC_DB_ECHO:bool=False
+    # PostgreSQL（CloudBase 云库）通常要求 SSL；本地 MySQL 保持 False
+    ASYNC_DB_SSL:bool=False
     ASYNC_DB_POOL_SIZE:int=60
     ASYNC_DB_MAX_OVERFLOW:int=0
+
+    # 允许跨域的前端来源，逗号分隔（线上要把静态托管域名加进来）
+    CORS_ALLOW_ORIGINS:str="http://localhost:5173,http://127.0.0.1:5173"
 
     # ★ JWT 签名密钥：同样只从 .env 读，没配就由 auth.py 拒绝启动
     SECRET_KEY:str=""

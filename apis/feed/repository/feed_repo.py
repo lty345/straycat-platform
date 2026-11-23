@@ -1,4 +1,4 @@
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 
 from db.model import AppUser, Content, UserEvent
 
@@ -37,7 +37,8 @@ async def preferred_mood(db, user_id: int) -> str | None:
 
     返回 None 表示算不出来（新用户、没有任何行为、或行为指向的内容都删了）。
     """
-    weight = func.sum(func.if_(UserEvent.event == "like", 3, 1))
+    # 用 case() 而不是 MySQL 的 IF_()：MySQL / PostgreSQL 都能跑
+    weight = func.sum(case((UserEvent.event == "like", 3), else_=1))
     stmt = (
         select(Content.mood, weight.label("w"))
         .join(Content, Content.id == UserEvent.target_id)

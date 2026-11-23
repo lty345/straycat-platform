@@ -30,6 +30,12 @@ const routes = [
   },
   // 404：必须放最后，它兜底
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('../views/Login.vue'),
+    meta: { title: '登录' },
+  },
+  {
     path: '/about',
     name: 'about',
     component: () => import('../views/About.vue'),

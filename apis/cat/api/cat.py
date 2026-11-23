@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, Path, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from apis.auth.deps import get_current_user
 from apis.cat.repository import cat_repo
-from apis.cat.schemas.cat import AdoptIn, CatOut
+from apis.cat.schemas.cat import CatOut
 from db.database import get_db_session
 from exts.exceptions.exception import BusinessError, ExceptionEnum
 from exts.responses.json_response import Success
@@ -43,12 +44,16 @@ async def list_cats(
 
 @router_cat.post("/cats/{cat_id}/adopt", summary="申请领养一只猫")
 async def adopt_cat(
-    payload: AdoptIn,
     cat_id: int = Path(..., ge=1, description="猫的 id"),
+    user=Depends(get_current_user),
     db: AsyncSession = Depends(get_db_session),
 ):
-    """申请领养。抢到返回成功；被别人抢先返回业务码 20001。"""
-    ok = await cat_repo.adopt_cat(db, cat_id, payload.user_id)
+    """申请领养。抢到返回成功；被别人抢先返回业务码 20001。
+
+    ★ 申请人来自 token，不是请求体：请求体里的 user_id 可以被随便填，
+      任何人都能冒充别人申请。现在只认 Authorization 头。
+    """
+    ok = await cat_repo.adopt_cat(db, cat_id, user.id)
     if not ok:
         # 失败有两种原因，要分开报：猫不存在 vs 被别人抢了
         if await cat_repo.get_cat_by_id(db, cat_id) is None:

@@ -3,8 +3,8 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class AdoptIn(BaseModel):
-    user_id: int
+# AdoptIn 已移除：申请人身份来自 Authorization: Bearer <token>，
+# 请求体里传 user_id 可以被随便填，无法防冒充。
 
 
 class CatOut(BaseModel):

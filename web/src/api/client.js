@@ -14,6 +14,8 @@
 // =============================================================================
 import axios from 'axios'
 
+import { clearToken, getToken } from './token'
+
 // 开发时留空 → 走 Vite 的 proxy（见 vite.config.js）
 // 部署时用 VITE_API_BASE 指向后端公网地址，例如 https://xxx.ap-shanghai.app.tcloudbase.com
 const API_BASE = import.meta.env.VITE_API_BASE || '/'
@@ -23,6 +25,16 @@ const client = axios.create({
   timeout: 10000,
 })
 
+// ---- 请求拦截器：每次请求自动带上 token ----
+// 没登录（没 token）就不加这个头，后端返回 10401，前端跳登录
+client.interceptors.request.use((config) => {
+  const token = getToken()
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
 client.interceptors.response.use(
   // ---- ① 拿到响应（HTTP 2xx）----
   (res) => {
@@ -30,7 +42,14 @@ client.interceptors.response.use(
 
     // 后端约定：success=true 才算成功；false 时 message 是可读的错误原因
     if (body && body.success === false) {
-      return Promise.reject(new Error(body.message || '请求失败'))
+      const e = new Error(body.message || '请求失败')
+      e.apiCode = body.api_code          // 把业务码带出去，页面可据此分支
+      // ★ 后端约定业务失败也返回 HTTP 200，所以"登录失效"要在这一层判断
+      if (body.api_code === 10401) {
+        clearToken()
+        window.dispatchEvent(new CustomEvent('auth:expired'))
+      }
+      return Promise.reject(e)
     }
 
     // 剥壳：页面里只关心 result
@@ -54,9 +73,14 @@ client.interceptors.response.use(
       messages[status] ||
       (err.code === 'ECONNABORTED' ? '请求超时' : err.message || '网络错误')
 
-    // 挂上 status，页面里想知道具体状态码可以取 e.status
+    // 挂上 status / apiCode，页面里想知道具体码可以取 e.status / e.apiCode
     const e = new Error(message)
     e.status = status
+    e.apiCode = err.response?.data?.api_code
+    if (status === 401) {
+      clearToken()
+      window.dispatchEvent(new CustomEvent('auth:expired'))
+    }
     return Promise.reject(e)
   }
 )

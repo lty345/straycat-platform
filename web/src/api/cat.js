@@ -24,8 +24,9 @@ export function fetchCats({ status = '', city = '', page = 1, pageSize = 20 } = 
  * ★ 失败时（比如 20001「这只猫已被他人申请」）拦截器会 reject，
  *   调用方 catch 到的 e.message 就是后端那句话，直接显示即可。
  */
-export function adoptCat(catId, userId) {
-  return client.post(`/api/v1/cats/${catId}/adopt`, { user_id: userId })
+// 身份在 Authorization 头里（client.js 拦截器自动加），不再传 user_id
+export function adoptCat(catId) {
+  return client.post(`/api/v1/cats/${catId}/adopt`)
 }
 
 // -----------------------------------------------------------------------------

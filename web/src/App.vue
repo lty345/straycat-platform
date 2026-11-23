@@ -1,8 +1,36 @@
 <script setup>
 // App.vue 做三件事：外壳（导航条）+ 装饰（爪印/小猫）+ 出口（router-view）
-import { RouterLink, RouterView } from 'vue-router'
+import { onMounted, onUnmounted } from 'vue'
+import { RouterLink, RouterView, useRoute, useRouter } from 'vue-router'
+
 import CatFace from './components/CatFace.vue'
+import { auth, doLogout, restoreSession } from './auth/store'
 import pawUrl from './assets/paw.svg'
+
+const route = useRoute()
+const router = useRouter()
+
+// 页面加载时：本地有 token 就换回用户信息（刷新页面不掉登录态）
+onMounted(() => {
+  restoreSession()
+  window.addEventListener('auth:expired', onExpired)
+})
+
+// ★ 必须解绑，否则热更新会重复监听
+onUnmounted(() => {
+  window.removeEventListener('auth:expired', onExpired)
+})
+
+// token 过期（client.js 发出的事件）→ 跳登录，登录后回到当前页
+function onExpired() {
+  if (route.name === 'login') return
+  router.replace({ name: 'login', query: { redirect: route.fullPath } })
+}
+
+function onLogout() {
+  doLogout()
+  if (route.name !== 'home') router.push('/')
+}
 
 // 背景爪印：位置、大小、旋转、动画延迟都写在这里，模板只负责渲染
 // （fixed 定位 + 低透明度，只在视觉边缘出现，不挡内容）
@@ -51,6 +79,17 @@ const paws = [
         <RouterLink to="/contents">内容</RouterLink>
         <RouterLink to="/feed">推荐</RouterLink>
         <RouterLink to="/cats">领养</RouterLink>
+
+        <RouterLink
+          v-if="!auth.user"
+          class="nav-login"
+          :to="{ name: 'login', query: { redirect: route.fullPath } }"
+        >登录</RouterLink>
+
+        <span v-else class="nav-user">
+          <span class="nav-name">{{ auth.user.nickname || auth.user.username }}</span>
+          <button class="nav-out" type="button" @click="onLogout">退出</button>
+        </span>
       </nav>
     </header>
 
@@ -206,5 +245,39 @@ const paws = [
 }
 .foot-link:hover {
   color: var(--violet-l);
+}
+
+/* ---- 登录态 ---- */
+.nav-login {
+  padding: 3px 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--violet-l);
+}
+.nav-login:hover {
+  border-color: var(--violet);
+  background: var(--bg-soft);
+}
+.nav-user {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.nav-name {
+  color: var(--fg);
+  font-size: 13.5px;
+}
+.nav-out {
+  border: none;
+  background: none;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nav-out:hover {
+  color: var(--bad);
 }
 </style>

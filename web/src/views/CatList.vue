@@ -10,11 +10,8 @@
 // =============================================================================
 import { ref, onMounted } from 'vue'
 import { fetchCats, adoptCat, approveCat, rejectCat } from '../api/cat'
-import { fetchUsers } from '../api/user'
+import { auth } from '../auth/store'
 import CatFace from '../components/CatFace.vue'
-
-// 当前操作人：从用户列表里取第一个（不写死 id，重跑种子脚本也不会错）
-const currentUserId = ref(null)
 
 const list = ref([])
 const total = ref(0)
@@ -51,7 +48,7 @@ async function onAdopt(cat) {
   adoptingId.value = cat.id
   notice.value = ''
   try {
-    await adoptCat(cat.id, currentUserId.value)
+    await adoptCat(cat.id)
     notice.value = `已申请领养「${cat.name}」，等待审核`
   } catch (e) {
     // 拦截器已经把后端的 message 剥好了：这里就是"这只猫已被他人申请"
@@ -91,14 +88,7 @@ async function review(cat, action) {
 }
 
 onMounted(async () => {
-  loading.value = true   // 先进加载态，避免"共 0 只"闪一下
-  // 先拿"当前操作人"，再拉列表（不写死 id）
-  try {
-    const users = await fetchUsers()
-    currentUserId.value = users.length ? users[0].id : null
-  } catch (e) {
-    notice.value = e.message
-  }
+  // 当前用户来自登录态（auth.user），不再拉用户列表
   await load()
 })
 </script>
@@ -148,13 +138,20 @@ onMounted(async () => {
 
           <div class="actions">
             <button
-              v-if="cat.status === '待领养'"
+              v-if="cat.status === '待领养' && auth.user"
               class="btn"
               :disabled="adoptingId === cat.id"
               @click="onAdopt(cat)"
             >
               {{ adoptingId === cat.id ? '申请中…' : '申请领养' }}
             </button>
+
+            <!-- 未登录：领养是重要操作，必须知道是谁在申请 -->
+            <RouterLink
+              v-else-if="cat.status === '待领养'"
+              class="btn"
+              :to="{ name: 'login', query: { redirect: '/cats' } }"
+            >登录后申请</RouterLink>
 
             <!-- 审核中：管理员视角的两个出口（演示用，真实系统这里必须鉴权） -->
             <template v-else-if="cat.status === '审核中'">

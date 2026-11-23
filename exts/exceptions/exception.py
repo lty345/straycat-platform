@@ -85,6 +85,11 @@ class ExceptionEnum(Enum):
     ADOPT_NOT_PENDING = (20003, "该申请不存在或已被处理")
     CAT_NOT_FOUND = (20004, "猫不存在")
 
+    # ---- 认证（10003~10099）----
+    USERNAME_TAKEN = (10003, "这个用户名已被注册")
+    LOGIN_FAILED = (10004, "用户名或密码错误")
+    TOKEN_INVALID = (10401, "登录状态已失效，请重新登录")
+
     CONTENT_NOT_FOUND = (30001, "内容不存在")
 
     EVENT_INVALID = (40001, "埋点事件不合法")

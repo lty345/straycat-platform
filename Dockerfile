@@ -28,6 +28,7 @@ RUN pip install --no-cache-dir -i ${PIP_INDEX} \
     "loguru>=0.7.3" \
     "cryptography>=50.0.2" \
     "python-jose>=3.5.0" \
+    "bcrypt>=5.0.0" \
     "httpx>=0.28.1" \
     "pillow>=13.0.0"
 

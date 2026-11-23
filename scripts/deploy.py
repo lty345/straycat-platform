@@ -118,12 +118,19 @@ def main() -> None:
     # 1) 拉代码
     if do_back:
         step("服务器拉取最新代码（git pull）")
-        code, text = run_remote(client, f"cd {REMOTE_DIR} && git pull 2>&1 | tail -5")
+        # ★ 用 fetch + reset 而不是 pull：
+        #   服务器是"部署副本"，本地手工改动（比如直接改过 Dockerfile）会让 pull 拒绝执行，
+        #   而且 pull 失败时脚本不会显式报错 —— 曾经因此让线上跑了旧代码。
+        #   reset --hard 让服务器强制对齐远端；deploy/.env 和 deploy/data 都不在 git 里，不受影响。
+        code, text = run_remote(
+            client,
+            f"cd {REMOTE_DIR} && git fetch --depth=1 origin main -q && git reset --hard FETCH_HEAD 2>&1 | tail -3 && git log --oneline -1",
+        )
         print("  " + text.replace("\n", "\n  ").strip())
         if code != 0:
-            fail("git pull 失败（可能有本地改动冲突）")
-        else:
-            ok("代码已更新")
+            fail("代码同步失败，请看上面输出")
+            sys.exit(1)
+        ok("代码已同步到远端最新")
 
     # 2) 上传前端
     if do_front:

@@ -133,7 +133,12 @@ def main() -> None:
         sftp.put(str(archive), "/tmp/_dist.tar.gz")
         sftp.close()
         archive.unlink(missing_ok=True)
-        code, text = run_remote(client, f"cd {REMOTE_DIR} && rm -rf web/dist && tar -xzf /tmp/_dist.tar.gz && ls web/dist | head -3")
+        # ★ 只清空目录内容，不删目录本身：
+        #   bind mount 绑定的是 inode，删掉再建会让运行中的 nginx 容器指向"已删除的旧 inode"→ 页面 403/空
+        code, text = run_remote(
+            client,
+            f"cd {REMOTE_DIR} && mkdir -p web/dist && find web/dist -mindepth 1 -delete && tar -xzf /tmp/_dist.tar.gz && ls web/dist | head -3",
+        )
         ok("前端已更新") if code == 0 else fail(text[-300:])
 
     # 3) 重启/重建容器
@@ -143,7 +148,8 @@ def main() -> None:
         services.append("api")
     if do_front:
         services.append("web")
-    cmd = f"cd {REMOTE_DIR}/deploy && docker compose up -d --build {' '.join(services)} 2>&1 | tail -8"
+    force = " --force-recreate web" if do_front else ""
+    cmd = f"cd {REMOTE_DIR}/deploy && docker compose up -d --build {' '.join(services)}{force} 2>&1 | tail -8"
     code, text = run_remote(client, cmd, timeout=2400)
     print("  " + text.replace("\n", "\n  ").strip())
     ok("容器已更新") if code == 0 else fail("compose 失败，看上面输出")

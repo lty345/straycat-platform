@@ -46,3 +46,4 @@ _probe_*
 .env.cloud
 deploy/.env
 deploy/data/
+deploy/.deploy.env

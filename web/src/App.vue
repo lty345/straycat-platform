@@ -59,7 +59,8 @@ const paws = [
     </main>
 
     <footer class="foot">
-      <span>规则版可解释推荐 · 并发安全领养 · 24 篇内容 50 条埋点</span>
+      <span>初尧 · 给流浪猫找个家</span>
+    <RouterLink class="foot-link" to="/about">关于这个项目</RouterLink>
     </footer>
   </div>
 </template>
@@ -186,9 +187,24 @@ const paws = [
 .foot {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
   padding: 16px 28px;
   border-top: 1px solid var(--border-soft);
   font-size: 12px;
   color: var(--muted);
+}
+
+.foot-link {
+  color: var(--muted);
+  text-decoration: none;
+  font-size: 12px;
+  opacity: 0.8;
+}
+.foot-link:hover {
+  color: var(--violet-l);
 }
 </style>

@@ -30,6 +30,13 @@ const routes = [
   },
   // 404：必须放最后，它兜底
   {
+    path: '/about',
+    name: 'about',
+    component: () => import('../views/About.vue'),
+    meta: { title: '关于' },
+  },
+
+  {
     path: '/:pathMatch(.*)*',
     name: 'not-found', meta: { title: '页面不存在' },
     component: () => import('../views/NotFound.vue'),

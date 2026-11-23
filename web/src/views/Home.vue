@@ -1,20 +1,21 @@
 <script setup>
 // =============================================================================
-// views/Home.vue —— 概览页（项目门面）
+// views/Home.vue —— 概览页（用户视角）
 // =============================================================================
-// 设计目标：一屏之内让人知道"这是什么、有什么、点哪里"。
-//   ① Hero：标题 + 一句话 + 两个入口按钮 + 猫咪照片墙（留白不再空荡）
-//   ② 三个入口卡：带序号，一眼看出有哪三块
-//   ③ 技术要点：三栏并列，扫一眼就懂
-//   ④ 后端状态：压成一行小字放到最后，不抢戏
+// 这一段只放"访客关心的事"：
+//   ① Hero：这是什么 + 两个入口
+//   ② 三个频道入口
+//   ③ 最新救助故事（真实数据，3 条）
+//   ④ 等待一个家的猫（真实数据，3 只）
+//
+// 技术要点 / 后端健康检查 / 埋点统计 → 挪到 /about（给面试官看，不在首页）
 // =============================================================================
 import { onMounted, ref } from 'vue'
-import { fetchHealth } from '../api/system'
+import { useRouter } from 'vue-router'
+import { fetchContents } from '../api/content'
+import { fetchCats } from '../api/cat'
 
-const status = ref('检测中…')
-const detail = ref('')
-const failed = ref(false)
-const ready = ref(false)
+const router = useRouter()
 
 const entries = [
   {
@@ -22,46 +23,52 @@ const entries = [
     to: '/contents',
     title: '内容',
     desc: '24 篇救助故事与养猫科普，按情绪筛选、分页浏览。',
-    tag: '列表 / 详情',
+    tag: '故事 · 科普',
   },
   {
     no: '02',
     to: '/feed',
     title: '推荐',
-    desc: '标签 + 情绪 + 同城 + 热度，乘时间衰减。换一个人，顺序就变。',
-    tag: '规则推荐 · 可解释',
+    desc: '按你喜欢的标签和情绪，挑出可能对胃口的几篇。',
+    tag: '为你挑选',
   },
   {
     no: '03',
     to: '/cats',
     title: '领养',
     desc: '一只猫只能被一个人申请；申请后进入审核，通过即成为它的家。',
-    tag: '并发抢占 · 状态机',
+    tag: '找个家',
   },
 ]
 
-const highlights = [
-  { key: '可解释推荐', desc: '每条都返回分数构成，如「标签×3 + 情绪×2 + 同城×1 + 热度×0.5，衰减×0.91」' },
-  { key: '并发安全', desc: '领养用原子 UPDATE + rowcount 抢占，10 个并发只成功 1 个' },
-  { key: '冷启动兜底', desc: '没有标签也没有行为的新用户，按近 7 天热度推荐' },
-]
-
-// 门面用的三张猫图（都在 public/covers 里，构建时一起打包）
 const photos = ['/covers/p03.jpg', '/covers/p07.jpg', '/covers/p12.jpg']
 
-onMounted(async () => {
+const stories = ref([])
+const cats = ref([])
+const loading = ref(true)
+
+async function load() {
+  loading.value = true
   try {
-    const result = await fetchHealth()
-    status.value = result.status === 'healthy' ? '后端在线' : '后端状态异常'
-    detail.value = JSON.stringify(result)
+    const [contentRes, catRes] = await Promise.all([
+      fetchContents({ page: 1, pageSize: 3 }),
+      fetchCats({ status: '待领养', pageSize: 3 }),
+    ])
+    stories.value = contentRes.list ?? []
+    cats.value = catRes.list ?? []
   } catch (e) {
-    failed.value = true
-    status.value = '连不上后端'
-    detail.value = e.message
+    stories.value = []
+    cats.value = []
   } finally {
-    ready.value = true
+    loading.value = false
   }
-})
+}
+
+function openStory(it) {
+  router.push({ name: 'content-detail', params: { id: it.id } })
+}
+
+onMounted(load)
 </script>
 
 <template>
@@ -73,16 +80,11 @@ onMounted(async () => {
         <h1 class="title">
           给流浪猫做的<br />内容社区
         </h1>
-        <p class="lead">
-          看猫、读救助故事、了解养猫知识，然后把它们带回家。
-        </p>
+        <p class="lead">看猫、读救助故事、了解养猫知识，然后把它们带回家。</p>
         <div class="cta">
           <RouterLink class="btn cta-main" to="/contents">逛逛内容</RouterLink>
-          <RouterLink class="btn cta-sub" to="/feed">看看推荐</RouterLink>
+          <RouterLink class="btn cta-sub" to="/cats">看看待领养的猫</RouterLink>
         </div>
-        <p class="hero-note">
-          技术重点不是又一套 CRUD，而是<b>可解释的个性化推荐</b>与<b>并发安全的领养抢占</b>。
-        </p>
       </div>
 
       <div class="hero-media" aria-hidden="true">
@@ -92,7 +94,7 @@ onMounted(async () => {
       </div>
     </div>
 
-    <!-- ② 三个出口 -->
+    <!-- ② 三个频道 -->
     <div class="entries">
       <RouterLink v-for="e in entries" :key="e.to" :to="e.to" class="entry">
         <span class="entry-no">{{ e.no }}</span>
@@ -103,27 +105,65 @@ onMounted(async () => {
       </RouterLink>
     </div>
 
-    <!-- ③ 技术要点：三栏 -->
-    <div class="feature-strip">
-      <div v-for="h in highlights" :key="h.key" class="feature">
-        <div class="feature-key">{{ h.key }}</div>
-        <p class="feature-desc">{{ h.desc }}</p>
+    <!-- ③ 最新故事 -->
+    <section class="block">
+      <div class="block-head">
+        <h2 class="block-title">最新故事</h2>
+        <RouterLink class="more" to="/contents">全部 24 篇 →</RouterLink>
       </div>
-    </div>
 
-    <!-- ④ 后端状态：一行 -->
-    <p class="status" :class="{ bad: failed }">
-      <span class="dot"></span>
-      <span class="status-text">{{ status }}</span>
-      <span v-if="failed" class="status-detail">{{ detail }}</span>
-      <span v-else class="status-detail">
-        接口正常响应 <code>GET /health</code>
-      </span>
-      <details v-if="ready && !failed" class="status-raw">
-        <summary>原始响应</summary>
-        <pre class="mono">{{ detail }}</pre>
-      </details>
-    </p>
+      <p v-if="loading" class="hint">载入中…</p>
+      <p v-else-if="!stories.length" class="hint">暂时没有内容</p>
+      <div v-else class="story-grid">
+        <article
+          v-for="it in stories"
+          :key="it.id"
+          class="story"
+          role="link"
+          tabindex="0"
+          @click="openStory(it)"
+          @keyup.enter="openStory(it)"
+        >
+          <div class="story-cover">
+            <img v-if="it.cover_url" :src="it.cover_url" :alt="it.title" loading="lazy" />
+          </div>
+          <div class="story-body">
+            <h3 class="story-title">{{ it.title }}</h3>
+            <p class="story-summary">{{ it.summary }}</p>
+            <div class="story-meta">
+              <span v-if="it.mood" class="mood" :data-mood="it.mood">{{ it.mood }}</span>
+              <span>{{ it.city }}</span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ④ 等待一个家 -->
+    <section class="block">
+      <div class="block-head">
+        <h2 class="block-title">等待一个家的猫</h2>
+        <RouterLink class="more" to="/cats">全部待领养 →</RouterLink>
+      </div>
+
+      <p v-if="loading" class="hint">载入中…</p>
+      <p v-else-if="!cats.length" class="hint">现在没有待领养的猫</p>
+      <div v-else class="cat-grid">
+        <RouterLink v-for="cat in cats" :key="cat.id" to="/cats" class="mini-cat">
+          <div class="mini-cover">
+            <img v-if="cat.cover_url" :src="cat.cover_url" :alt="cat.name" loading="lazy" />
+          </div>
+          <div class="mini-body">
+            <div class="mini-name">
+              {{ cat.name }}
+              <span class="mini-breed">{{ cat.breed }}</span>
+            </div>
+            <p class="mini-meta">{{ cat.age_month }} 个月 · {{ cat.city }}</p>
+            <p class="mini-health">{{ cat.health }}</p>
+          </div>
+        </RouterLink>
+      </div>
+    </section>
   </section>
 </template>
 
@@ -134,7 +174,7 @@ onMounted(async () => {
   grid-template-columns: 1.05fr 0.95fr;
   gap: 48px;
   align-items: center;
-  padding: 10px 0 44px;
+  padding: 10px 0 46px;
 }
 
 .eyebrow {
@@ -160,14 +200,13 @@ onMounted(async () => {
   line-height: 1.9;
   color: var(--muted);
   margin: 0 0 26px;
-  max-width: 26em;
+  max-width: 24em;
 }
 
 .cta {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  margin-bottom: 22px;
 }
 
 .btn {
@@ -200,18 +239,6 @@ onMounted(async () => {
   border-color: var(--violet);
   color: var(--violet-l);
   transform: translateY(-1px);
-}
-
-.hero-note {
-  font-size: 12.5px;
-  line-height: 1.9;
-  color: var(--muted);
-  opacity: 0.9;
-  margin: 0;
-}
-.hero-note b {
-  color: var(--fg);
-  font-weight: 500;
 }
 
 /* ---------- 照片墙 ---------- */
@@ -249,12 +276,12 @@ onMounted(async () => {
   transform: rotate(5deg);
 }
 
-/* ---------- 三个出口 ---------- */
+/* ---------- 三个频道 ---------- */
 .entries {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
   gap: 14px;
-  margin-bottom: 28px;
+  margin-bottom: 40px;
 }
 
 .entry {
@@ -310,74 +337,169 @@ onMounted(async () => {
   transform: translateX(4px);
 }
 
-/* ---------- 技术要点 ---------- */
-.feature-strip {
+/* ---------- 区块通用 ---------- */
+.block {
+  margin-bottom: 44px;
+}
+.block-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.block-title {
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  margin: 0;
+  color: var(--fg);
+}
+.more {
+  font-size: 12.5px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.more:hover {
+  color: var(--violet-l);
+}
+.hint {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- 最新故事 ---------- */
+.story-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(220px, 100%), 1fr));
-  gap: 1px;
-  background: var(--border-soft);
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 16px;
+}
+
+.story {
   border: 1px solid var(--border-soft);
   border-radius: var(--radius);
-  overflow: hidden;
-  margin-bottom: 24px;
-}
-.feature {
   background: var(--panel);
-  padding: 18px 20px;
+  box-shadow: var(--card-shadow);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
 }
-.feature-key {
-  font-size: 13px;
-  color: var(--violet-l);
-  margin-bottom: 8px;
-  letter-spacing: 0.5px;
+.story:hover {
+  border-color: var(--violet);
+  transform: translateY(-3px);
+  box-shadow: var(--card-shadow-hover);
 }
-.feature-desc {
-  margin: 0;
+.story:focus-visible {
+  outline: 2px solid var(--violet);
+  outline-offset: 2px;
+}
+
+.story-cover {
+  aspect-ratio: 16 / 10;
+  background: var(--bg-soft);
+}
+.story-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.story-body {
+  padding: 14px 16px 16px;
+}
+.story-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  margin: 0 0 8px;
+  color: var(--fg);
+}
+.story-summary {
   font-size: 12.5px;
   line-height: 1.8;
   color: var(--muted);
+  margin: 0 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-
-/* ---------- 后端状态 ---------- */
-.status {
+.story-meta {
   display: flex;
+  gap: 10px;
   align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin: 0;
-  padding: 12px 2px 0;
-  border-top: 1px solid var(--border-soft);
-  font-size: 12px;
+  font-size: 11.5px;
   color: var(--muted);
 }
-.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--ok, #4f9d69);
-  flex-shrink: 0;
-}
-.status.bad .dot {
-  background: var(--bad, #c0563f);
-}
-.status code {
-  font-family: ui-monospace, Consolas, monospace;
+.mood {
+  padding: 1px 8px;
+  border-radius: 999px;
+  border: 1px solid currentColor;
   font-size: 11px;
-  padding: 1px 5px;
-  border-radius: 3px;
+}
+.mood[data-mood='治愈'] { color: var(--mood-cure); }
+.mood[data-mood='揪心'] { color: var(--mood-heart); }
+.mood[data-mood='欢乐'] { color: var(--mood-fun); }
+.mood[data-mood='科普'] { color: var(--mood-know); }
+
+/* ---------- 等待领养 ---------- */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 16px;
+}
+.mini-cat {
+  display: flex;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--card-shadow);
+  text-decoration: none;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.mini-cat:hover {
+  border-color: var(--violet);
+  transform: translateY(-3px);
+  box-shadow: var(--card-shadow-hover);
+}
+.mini-cover {
+  width: 96px;
+  height: 96px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
   background: var(--bg-soft);
 }
-.status-raw summary {
-  cursor: pointer;
-  color: var(--muted);
+.mini-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
-.mono {
-  font-family: ui-monospace, Consolas, monospace;
-  font-size: 11px;
+.mini-body {
+  min-width: 0;
+}
+.mini-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 6px;
+}
+.mini-breed {
+  font-size: 11.5px;
+  font-weight: 400;
   color: var(--muted);
-  margin: 8px 0 0;
-  white-space: pre-wrap;
-  word-break: break-all;
+  margin-left: 4px;
+}
+.mini-meta,
+.mini-health {
+  margin: 0 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.7;
 }
 
 /* ---------- 窄屏 ---------- */

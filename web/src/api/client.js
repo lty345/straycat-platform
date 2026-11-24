@@ -27,6 +27,29 @@ const client = axios.create({
 
 // ---- 请求拦截器：每次请求自动带上 token ----
 // 没登录（没 token）就不加这个头，后端返回 10401，前端跳登录
+
+// 后端 400 时返回的是 Pydantic 的原始 detail（英文 + 字段路径），
+// 直接甩给用户没人看得懂。这里翻译成"哪个字段、错在哪"。
+const FIELD_NAMES = {
+  username: '用户名',
+  password: '密码',
+  nickname: '昵称',
+  city: '城市',
+  interest_tags: '兴趣标签',
+}
+
+function describeDetail(detail) {
+  if (!Array.isArray(detail) || !detail.length) return null
+  const d = detail[0]
+  const field = FIELD_NAMES[d.loc?.[1]] || d.loc?.[1] || ''
+  const type = String(d.type || '')
+  if (type.includes('min_length')) return `${field}至少 ${d.ctx?.min_length ?? ''} 位`
+  if (type.includes('max_length')) return `${field}最多 ${d.ctx?.max_length ?? ''} 位`
+  if (type.includes('pattern_mismatch')) return `${field}只能包含字母、数字、下划线，3~32 位`
+  if (type.includes('missing')) return `请填写${field}`
+  return `${field}格式不正确`
+}
+
 client.interceptors.request.use((config) => {
   const token = getToken()
   if (token) {
@@ -42,8 +65,10 @@ client.interceptors.response.use(
 
     // 后端约定：success=true 才算成功；false 时 message 是可读的错误原因
     if (body && body.success === false) {
-      const e = new Error(body.message || '请求失败')
+      const friendly = describeDetail(body.result?.detail)
+      const e = new Error(friendly || body.message || '请求失败')
       e.apiCode = body.api_code          // 把业务码带出去，页面可据此分支
+      e.field = body.result?.detail?.[0]?.loc?.[1] || null   // 哪个字段出错
       // ★ 后端约定业务失败也返回 HTTP 200，所以"登录失效"要在这一层判断
       if (body.api_code === 10401) {
         clearToken()

@@ -25,6 +25,17 @@ const form = reactive({
 })
 const error = ref('')
 const submitting = ref(false)
+// 字段级错误：提交前就能提示，不用等后端
+const fieldErrors = reactive({ username: '', password: '' })
+
+function validate() {
+  const name = form.username.trim()
+  fieldErrors.username = /^[A-Za-z0-9_]{3,32}$/.test(name)
+    ? ''
+    : '用户名 3~32 位，只能包含字母、数字、下划线'
+  fieldErrors.password = form.password.length >= 8 ? '' : '密码至少 8 位'
+  return !fieldErrors.username && !fieldErrors.password
+}
 
 const isRegister = computed(() => mode.value === 'register')
 
@@ -40,6 +51,7 @@ function switchMode(next) {
 
 async function submit() {
   error.value = ''
+  if (!validate()) return          // 前端先拦一道，省一次请求也更好懂
   submitting.value = true
   try {
     if (isRegister.value) {
@@ -56,7 +68,12 @@ async function submit() {
     const target = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.replace(target)
   } catch (e) {
-    error.value = e.message      // 后端 message 已经是人话
+    // 后端如果指明了哪个字段，就显示在对应输入框下面
+    if (e.field && e.field in fieldErrors) {
+      fieldErrors[e.field] = e.message
+    } else {
+      error.value = e.message
+    }
   } finally {
     submitting.value = false
   }
@@ -75,22 +92,24 @@ async function submit() {
         <label class="field">
           <span>用户名</span>
           <input
-            v-model="form.username"
+            v-model="form.username" @input="fieldErrors.username = ''"
             autocomplete="username"
             placeholder="3~32 位，字母数字下划线"
             required
           />
+          <small v-if="fieldErrors.username" class="field-err">{{ fieldErrors.username }}</small>
         </label>
 
         <label class="field">
           <span>密码</span>
           <input
-            v-model="form.password"
+            v-model="form.password" @input="fieldErrors.password = ''"
             type="password"
             :autocomplete="isRegister ? 'new-password' : 'current-password'"
             :placeholder="isRegister ? '至少 8 位' : '输入密码'"
             required
           />
+          <small v-if="fieldErrors.password" class="field-err">{{ fieldErrors.password }}</small>
         </label>
 
         <template v-if="isRegister">
@@ -197,6 +216,16 @@ async function submit() {
 .field input:focus {
   border-color: var(--violet);
   box-shadow: 0 0 0 3px rgba(192, 122, 62, 0.12);
+}
+
+.field-err {
+  color: var(--bad);
+  font-size: 11.5px;
+  margin-top: 2px;
+}
+.field input:focus + .field-err,
+.field.err input {
+  border-color: var(--bad);
 }
 
 .err {

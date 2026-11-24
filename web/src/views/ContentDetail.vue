@@ -1,9 +1,11 @@
 <script setup>
 import { postEvent } from '../api/event'
-import { ref, onMounted,onUnmounted } from 'vue'                 // 注意：没有 computed，也不需要 list
+import { computed, ref, onMounted,onUnmounted } from 'vue'                 // 注意：没有 computed，也不需要 list
 import { useRoute, useRouter } from 'vue-router'     // 读参数 + 返回
 import { fetchContentDetail } from '../api/content'
 import { fetchUsers } from '../api/user'
+import { fetchContents } from '../api/content'
+import { fullTime } from '../utils/time'
 
 const contentId = ref(null)
 const item = ref(null)        // 详情对象；null = 还没有
@@ -11,6 +13,13 @@ const loading = ref(true)
 const error = ref('')
 const enterAt = ref(0)     // 进入时间戳；0 = 还没开始计时
 const userId = ref(null)   // 当前演示用户
+const related = ref([])    // 同情绪的其他内容
+
+// 按 350 字/分钟估算阅读时长（比显示字数更贴近读者直觉）
+const readMinutes = computed(() => {
+  const n = (item.value?.body || '').length
+  return n ? Math.max(1, Math.round(n / 350)) : 0
+})
 const route = useRoute()      // 地址牌：读 params
 const router = useRouter()    // 遥控器：做 back()
 
@@ -23,6 +32,16 @@ async function load() {
     enterAt.value = Date.now()      // 内容加载成功才开始计时
     const users = await fetchUsers()
     userId.value = users.length ? users[0].id : null
+
+    // 相关阅读：同情绪的另外几篇（拿不到就留空，不影响正文）
+    try {
+      const same = await fetchContents({ mood: item.value.mood || '', pageSize: 6 })
+      related.value = (same.list ?? [])
+        .filter((x) => x.id !== contentId.value)
+        .slice(0, 3)
+    } catch {
+      related.value = []
+    }
   } catch (e) {
     error.value = e.message       // "内容不存在" / "参数错误" 都在这里
     item.value = null             // ← 别忘：失败要把旧数据清掉
@@ -79,12 +98,31 @@ onMounted(load)
       <h1 class="title">{{ item.title }}</h1>
       <div class="meta">
         <span class="dia">◈</span>
-        <span>{{ item.pub_time }}</span>
+        <span>{{ fullTime(item.pub_time) }}</span>
         <span v-if="item.mood" class="mood" :data-mood="item.mood">{{ item.mood }}</span>
+        <span v-if="readMinutes" class="reading">{{ readMinutes }} 分钟读完</span>
         <span v-if="item.tags" class="tags">{{ item.tags }}</span>
       </div>
       <p class="body">{{ item.body }}</p>
     </article>
+
+    <!-- 相关阅读：给读者一条继续往下走的路径 -->
+    <section v-if="related.length" class="related">
+      <h2 class="related-title">你可能也喜欢</h2>
+      <div class="related-list">
+        <RouterLink
+          v-for="r in related"
+          :key="r.id"
+          class="rel-card"
+          :to="{ name: 'content-detail', params: { id: r.id } }"
+        >
+          <div class="rel-cover">
+            <img v-if="r.cover_url" :src="r.cover_url" :alt="r.title" loading="lazy" />
+          </div>
+          <span class="rel-title">{{ r.title }}</span>
+        </RouterLink>
+      </div>
+    </section>
 
     <!-- ★ 出口放在三态之外：正常、出错、加载中都能返回 -->
     <div class="foot">
@@ -247,5 +285,83 @@ onMounted(load)
     font-size: 13px;
     line-height: 1.8;
   }
+}
+
+/* ===== UI 升级：阅读体验 ===== */
+/* 一行 60~75 个字符最舒服；原来整屏 1000px 宽，一行 80+ 字，读起来累 */
+.article {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 30px 34px 34px;
+}
+.hero {
+  max-height: 340px;
+  width: 100%;
+  object-fit: cover;
+}
+.title {
+  font-size: 26px;
+  line-height: 1.45;
+  letter-spacing: 0.3px;
+  margin-bottom: 14px;
+}
+.body {
+  white-space: pre-wrap;
+  font-size: 15.5px;
+  line-height: 1.95;
+  letter-spacing: 0.2px;
+  color: #3b332c;
+  margin: 0;
+}
+
+/* 相关阅读 */
+.related {
+  max-width: 780px;
+  margin: 26px auto 0;
+}
+.related-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: 1px;
+  margin: 0 0 12px;
+}
+.related-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(200px, 100%), 1fr));
+  gap: 12px;
+}
+.rel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-decoration: none;
+  border: 1px solid var(--border-soft);
+  border-radius: var(--radius);
+  background: var(--panel);
+  overflow: hidden;
+  transition: border-color 0.18s, transform 0.18s, box-shadow 0.18s;
+}
+.rel-card:hover {
+  border-color: var(--violet);
+  transform: translateY(-2px);
+  box-shadow: var(--card-shadow-hover);
+}
+.rel-cover { aspect-ratio: 16 / 10; background: var(--bg-soft); }
+.rel-cover img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.rel-title {
+  font-size: 13px;
+  color: var(--fg);
+  line-height: 1.5;
+  padding: 0 12px 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.reading {
+  font-size: 12px;
+  color: var(--muted);
+  opacity: 0.85;
 }
 </style>

@@ -115,7 +115,16 @@ onMounted(async () => {
     <p v-if="notice" class="notice">{{ notice }}</p>
 
     <p v-if="error">出错了：{{ error }}</p>
-    <p v-else-if="loading">加载中…</p>
+    <div v-else-if="loading" class="list" aria-busy="true">
+      <div v-for="i in 4" :key="'sk' + i" class="card sk-card">
+        <div class="sk sk-cover"></div>
+        <div class="body">
+          <div class="sk sk-line" style="width: 45%"></div>
+          <div class="sk sk-line" style="width: 70%"></div>
+          <div class="sk sk-line" style="width: 55%"></div>
+        </div>
+      </div>
+    </div>
     <div v-else-if="list.length === 0" class="empty">
       <CatFace :size="52" />
       <p>这个条件下还没有猫</p>
@@ -137,9 +146,14 @@ onMounted(async () => {
           <p class="health">{{ cat.health }}</p>
 
           <div class="actions">
+            <span
+              v-if="cat.status === '审核中' && auth.user && cat.applicant_id === auth.user.id"
+              class="mine"
+            >你已申请，等待审核</span>
+
             <button
               v-if="cat.status === '待领养' && auth.user"
-              class="btn"
+              class="btn btn-primary"
               :disabled="adoptingId === cat.id"
               @click="onAdopt(cat)"
             >
@@ -149,7 +163,7 @@ onMounted(async () => {
             <!-- 未登录：领养是重要操作，必须知道是谁在申请 -->
             <RouterLink
               v-else-if="cat.status === '待领养'"
-              class="btn"
+              class="btn btn-primary"
               :to="{ name: 'login', query: { redirect: '/cats' } }"
             >登录后申请</RouterLink>
 
@@ -268,7 +282,7 @@ h1 {
 }
 /* 状态徽章跟在猫名后面（原来压在图片上，遮住照片） */
 .body .top .badge {
-  margin-left: auto;
+  margin-left: 8px;
   flex-shrink: 0;
 }
 
@@ -375,4 +389,32 @@ h1 {
 .btn-ghost:hover {
   color: var(--fg);
 }
+
+/* ===== UI 升级 ===== */
+.cover-wrap { width: 160px; height: 124px; }
+.card { height: 100%; }
+.list { align-items: stretch; }
+.body { display: flex; flex-direction: column; }
+
+/* 主按钮：申请领养是这一页唯一的目标动作，必须显眼 */
+.btn-primary {
+  background: var(--violet-l);
+  border-color: var(--violet-l);
+  color: #fff;
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--violet);
+  border-color: var(--violet);
+  color: #fff;
+}
+.mine {
+  font-size: 12px;
+  color: var(--muted);
+  padding: 5px 0;
+}
+
+/* 骨架 */
+.sk-card { pointer-events: none; }
+.sk-cover { width: 160px; height: 124px; flex-shrink: 0; }
+.sk-line { height: 12px; margin: 10px 0; }
 </style>

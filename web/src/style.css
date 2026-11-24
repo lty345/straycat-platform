@@ -91,3 +91,21 @@ pre {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--violet);
 }
+
+
+/* =============================================================================
+   骨架屏：加载占位（比"载入中…"文字更接近真实布局，减少跳动）
+   ============================================================================= */
+.sk {
+  background: linear-gradient(90deg, var(--bg-soft) 25%, rgba(255, 255, 255, 0.6) 37%, var(--bg-soft) 63%);
+  background-size: 400% 100%;
+  animation: sk-shimmer 1.3s ease infinite;
+  border-radius: var(--radius-sm);
+}
+@keyframes sk-shimmer {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sk { animation: none; }
+}

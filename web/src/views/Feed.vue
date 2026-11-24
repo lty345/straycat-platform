@@ -88,7 +88,7 @@ onMounted(async () => {
         <div class="body">
           <div class="top">
             <span class="title">{{ it.title }}</span>
-            <span class="score">{{ it.score }}</span>
+            <span class="score"><em>匹配</em>{{ it.score }}</span>
           </div>
           <p class="summary">{{ it.summary }}</p>
           <div class="meta">
@@ -96,7 +96,11 @@ onMounted(async () => {
             <span>{{ it.city }}</span>
             <span v-if="preferredMood">偏好情绪：{{ preferredMood }}</span>
           </div>
-          <p class="reason">{{ it.reason }}</p>   <!-- ★ 这一行是这一页的灵魂 -->
+          <!-- ★ 这一行是这一页的灵魂：为什么推荐它 -->
+          <div class="why">
+            <span class="why-label">为什么推荐</span>
+            <p class="reason">{{ it.reason }}</p>
+          </div>
         </div>
       </li>
     </ul>
@@ -274,5 +278,57 @@ h1 {
   .reason {
     font-size: 10.5px;
   }
+}
+
+/* ===== UI 升级 ===== */
+.list { align-items: stretch; }
+.card { height: 100%; }
+.body { display: flex; flex-direction: column; }
+
+/* 分数做成徽章：一眼看出这是"排序依据"，不是正文 */
+.score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-soft);
+  color: var(--violet-l);
+  font-size: 13px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.score em {
+  font-style: normal;
+  font-size: 10.5px;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+/* 推荐理由：从"挤成两行的等宽小字"变成有边界的说明块 */
+.why {
+  margin-top: auto;
+  background: var(--bg-soft);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+.why-label {
+  display: block;
+  font-size: 10.5px;
+  color: var(--violet-l);
+  opacity: 0.85;
+  margin-bottom: 3px;
+  letter-spacing: 0.5px;
+}
+.reason {
+  font-family: inherit;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: var(--muted);
+  border-left: none;
+  padding: 0;
+  margin: 0;
+  word-break: normal;
+  overflow-wrap: anywhere;
 }
 </style>

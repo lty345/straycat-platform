@@ -67,6 +67,8 @@ function next() {
 }
 
 import { useRouter } from 'vue-router'
+
+import { fromNow } from '../utils/time'
 const router = useRouter()
 
 function openDetail(item) {
@@ -109,9 +111,16 @@ onMounted(() => {
       <p class="state-hint">后端起了吗？<code>uv run fastapi dev app.py</code></p>
     </div>
 
-    <!-- ② 加载中 -->
-    <div v-else-if="loading" class="state">
-      <div class="state-title">载入中…</div>
+    <!-- ② 加载中：骨架屏（保持和真实卡片一样的结构，避免布局跳动） -->
+    <div v-else-if="loading" class="list" aria-busy="true">
+      <div v-for="i in 6" :key="'sk' + i" class="card sk-card">
+        <div class="sk sk-cover"></div>
+        <div class="card-body">
+          <div class="sk sk-line" style="width: 72%"></div>
+          <div class="sk sk-line" style="width: 96%"></div>
+          <div class="sk sk-line" style="width: 48%"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ③ 空列表 -->
@@ -134,8 +143,7 @@ onMounted(() => {
             </div>
             <p v-if="item.summary" class="summary">{{ item.summary }}</p>
             <div class="meta">
-              <span class="dia">◈</span>
-              <span>{{ item.pub_time }}</span>
+              <span class="when">{{ fromNow(item.pub_time) }}</span>
               <span v-if="item.tags" class="tags">{{ item.tags }}</span>
             </div>
           </div>
@@ -421,4 +429,60 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
+
+/* ===== UI 升级 ===== */
+.list { align-items: stretch; }
+.card { height: 100%; }
+.cover-wrap {
+  position: relative;
+  aspect-ratio: 16 / 10;      /* 固定比例：不同尺寸的图不会把卡片撑成不同高度 */
+  overflow: hidden;
+  background: var(--bg-soft);
+}
+.cover {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.45s ease;
+}
+.card:hover .cover { transform: scale(1.045); }
+.card-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.summary {
+  flex: 1;                    /* 摘要吃掉剩余空间 → 同一行的卡片底部对齐 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* 图片上的情绪标签：加毛玻璃底，任何照片上都看得清 */
+.cover-wrap .mood {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(255, 253, 248, 0.92);
+  backdrop-filter: blur(6px);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+}
+.when { color: var(--muted); font-size: 11.5px; }
+.tags {
+  color: var(--muted);
+  font-size: 11.5px;
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* 骨架 */
+.sk-card { pointer-events: none; }
+.sk-cover { aspect-ratio: 16 / 10; width: 100%; border-radius: 0; }
+.sk-line { height: 12px; margin: 10px 0; }
 </style>
